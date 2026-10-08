@@ -54,9 +54,14 @@
         <div class="viewport"><div class="list">${c.jobs.length ? c.jobs.map((j) => jobRow(j, today, c.late)).join('') : '<div class="empty">Nothing here ✓</div>'}</div></div>
         <div class="page-dots"></div>
       </section>`).join('');
-    // Portrait screens stack the lists; give busier lists more of the height.
+    // Portrait screens stack the lists. Fixed shares of the height: Due today gets 3 parts,
+    // the next workday 1 part (75/25), and Late 2 parts when it has jobs. An empty list
+    // shrinks to just its header so the others get the room.
+    const WEIGHT = { late: 2, today: 3, next: 1 };
     document.querySelectorAll('.tv-col').forEach((el, i) => {
-      el.style.flexGrow = String(Math.max(1.5, Math.min(cols[i].jobs.length, 10)));
+      const empty = cols[i].jobs.length === 0;
+      el.classList.toggle('empty-col', empty);
+      el.style.flexGrow = empty ? '0' : String(WEIGHT[cols[i].key]);
     });
     const stages = M.stageList(open, stageOf);
     $('stages').innerHTML = stages.map(([name, n]) => `<div class="tv-stage"><div class="l">${M.esc(name)}</div><div class="v">${n}</div></div>`).join('');

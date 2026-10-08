@@ -75,7 +75,7 @@ button, input, select { font: inherit; color: inherit; }
 .scan-pill.warn .dot { background: var(--warning); }
 .scan-pill.err .dot { background: var(--critical); }
 
-main { padding: 20px 24px 40px; max-width: 1500px; margin: 0 auto; display: grid; gap: 20px; }
+main { padding: 20px 24px 40px; margin: 0 auto; display: grid; gap: 20px; }
 .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 18px; min-width: 0; }
 .card h2 { font-size: 14px; margin: 0 0 2px; font-weight: 650; }
 .card .hint { color: var(--muted); font-size: 12px; margin: 0 0 12px; }

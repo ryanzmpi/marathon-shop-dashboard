@@ -9,7 +9,7 @@
 <link rel="stylesheet" href="/app.css">
 <style>
   html, body { height: 100%; overflow: hidden; }
-  body { font-size: clamp(14px, 1.05vw, 26px); }
+  body { font-size: clamp(13px, 0.95vw, 23px); }
   .tv { height: 100vh; display: grid; grid-template-rows: auto auto 1fr auto; gap: 1.2vh; padding: 1.6vh 1.6vw; }
   .tv-head { display: flex; align-items: baseline; gap: 1.5vw; }
   .tv-head h1 { font-size: 1.7em; margin: 0; font-weight: 700; letter-spacing: -0.02em; }
@@ -52,7 +52,7 @@
 
   /* ---------- vertical (portrait) screens ---------- */
   @media (orientation: portrait) {
-    body { font-size: clamp(13px, 1.75vw, 36px); }
+    body { font-size: clamp(12px, 1.58vw, 32px); }
     .tv { padding: 1.4vh 2.2vw; gap: 1vh; }
     .tv-head { flex-wrap: wrap; row-gap: .3vh; }
     .tv-kpis { grid-template-columns: repeat(4, 1fr); gap: 1.5vw; }
@@ -61,6 +61,10 @@
     .tv-kpi .v { font-size: 2.8em; }
     .tv-cols { display: flex; flex-direction: column; gap: 1vh; }
     .tv-col { flex: 1 1 0; min-height: 8vh; }
+    .tv-col.empty-col { flex: 0 0 auto; min-height: 0; }
+    .tv-col.empty-col .viewport { flex: 0 0 auto; }
+    .tv-col.empty-col .page-dots { display: none; }
+    .tv-col.empty-col .empty { padding: .8vh 2.2vw; }
     .tv-col h2 { padding: 1vh 2.2vw; }
     .tv-job { padding: .7vh 2.2vw; }
     .tv-stages { flex-wrap: wrap; gap: 1vh 2vw; }
