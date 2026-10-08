@@ -13,8 +13,10 @@ module.exports = {
   // The listener refuses requests without a Referer header.
   referer: process.env.LISTENER_REFERER || new URL(listenerUrl).origin + '/planweb/',
 
-  // Dashboard login. The app will not show any data until this is set.
+  // Dashboard login. Leave unset for no login screen (open to anyone with the URL).
   password: process.env.DASHBOARD_PASSWORD || '',
+  // Optional: a secret for display screens, used as ?key=… in the URL instead of logging in.
+  displayKey: process.env.DISPLAY_KEY || '',
   sessionSecret: process.env.SESSION_SECRET || process.env.DASHBOARD_PASSWORD || '',
   sessionDays: num(process.env.SESSION_DAYS, 365),
 

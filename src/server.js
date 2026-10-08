@@ -75,7 +75,10 @@ const server = http.createServer(async (req, res) => {
   const p = url.pathname;
 
   if (p === '/health') return send(res, 200, 'ok');
-  if (!cfg.password) return send(res, 503, 'Set the DASHBOARD_PASSWORD variable in Railway to turn the dashboard on.');
+  // No DASHBOARD_PASSWORD set → the dashboard is open to anyone with the URL (no login screen).
+  const open = !cfg.password;
+  // DISPLAY_KEY lets signage players skip the login: https://<url>/tv?key=<DISPLAY_KEY>
+  const keyOk = cfg.displayKey && url.searchParams.get('key') === cfg.displayKey;
 
   if (p === '/login' && req.method === 'POST') {
     const body = new URLSearchParams(await readBody(req));
@@ -91,11 +94,12 @@ const server = http.createServer(async (req, res) => {
     return send(res, 303, '', 'text/plain', { Location: `/login?bad=1&next=${encodeURIComponent(next)}` });
   }
   if (p === '/login') return sendFile(res, 'login.html');
+  if (p === '/logout' && open) return send(res, 303, '', 'text/plain', { Location: '/' });
   if (p === '/logout') return send(res, 303, '', 'text/plain', { Location: '/login', 'Set-Cookie': `${COOKIE}=; Path=/; Max-Age=0` });
   if (p === '/login.css') return sendFile(res, 'app.css');
   if (p === '/favicon.svg') return sendFile(res, 'favicon.svg');
 
-  if (!validToken(cookies(req)[COOKIE])) {
+  if (!open && !keyOk && !validToken(cookies(req)[COOKIE])) {
     if (p.startsWith('/api/')) return send(res, 401, '{"error":"login required"}', 'application/json');
     return send(res, 303, '', 'text/plain', { Location: `/login?next=${encodeURIComponent(p + url.search)}` });
   }
@@ -112,6 +116,6 @@ const server = http.createServer(async (req, res) => {
 
 server.listen(cfg.port, () => {
   console.log(`Shop dashboard listening on :${cfg.port}`);
-  if (!cfg.password) console.warn('DASHBOARD_PASSWORD is not set — the dashboard will stay locked.');
+  if (!cfg.password) console.warn('DASHBOARD_PASSWORD is not set — the dashboard is open to anyone with the URL.');
   scanner.start();
 });

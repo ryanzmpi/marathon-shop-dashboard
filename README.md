@@ -1,6 +1,6 @@
 # Marathon Printing · Shop Dashboard
 
-A password-protected web dashboard showing open jobs from Printer's Plan. It reads job data from the Web2Plan listener (`Listener.aspx`) at `marathonprinting.pagepath.com`.
+A web dashboard showing open jobs from Printer's Plan. It reads job data from the Web2Plan listener (`Listener.aspx`) at `marathonprinting.pagepath.com`.
 
 - **Office view** (`/`): late, due today and upcoming counts; a workload chart; jobs by stage; shipped totals; and a searchable, sortable job table. Click any row to see its line items and work-order note.
 - **TV view** (`/tv`): a full-screen display for the shop floor showing Late, Due today and Due next workday. It refreshes every minute and pages through long lists on its own.
@@ -26,13 +26,14 @@ Job types the listener understands (`todo=GetJob&type=…&jobno=…`): `Order` (
 
    | Variable | Value |
    |---|---|
-   | `DASHBOARD_PASSWORD` | the password people will type to open the dashboard |
-   | `SESSION_SECRET` | any long random string (keeps logins valid across restarts) |
    | `START_JOBNO` | a recent job number, e.g. `267200` |
+   | `DASHBOARD_PASSWORD` | *optional* — leave it out for no login screen at all |
+   | `DISPLAY_KEY` | *optional* — with a password set, lets displays skip the login via `/tv?key=<DISPLAY_KEY>` |
+   | `SESSION_SECRET` | *optional* — any long random string (keeps logins valid across restarts) |
 
 3. Under **Settings → Networking**, click **Generate Domain** to get a URL.
 4. Optional, but it avoids a re-scan after every deploy: right-click the service → **Attach Volume**, set the mount path to `/data`, then add the variable `DATA_DIR=/data`.
-5. Open the URL and log in. On the shop TV, open `<your-url>/tv` and log in once. The login lasts a year.
+5. Open the URL. On shop displays, point the player at `<your-url>/tv` (or `<your-url>/tv?key=…` if you use a password + `DISPLAY_KEY`).
 
 Railway detects Node and runs `npm start` automatically. The health check is at `/health`.
 

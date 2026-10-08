@@ -55,7 +55,8 @@ const MSD = (() => {
   }
 
   async function load() {
-    const res = await fetch('/api/data', { cache: 'no-store' });
+    const key = new URLSearchParams(location.search).get('key');
+    const res = await fetch('/api/data' + (key ? '?key=' + encodeURIComponent(key) : ''), { cache: 'no-store' });
     if (res.status === 401) { location.href = '/login?next=' + encodeURIComponent(location.pathname); throw new Error('login'); }
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const data = await res.json();
