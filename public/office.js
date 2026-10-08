@@ -38,6 +38,24 @@
       </div>`).join('');
   }
 
+  // ---------------- goal gauges ----------------
+  function renderGauges() {
+    const g = data.gauges || {}, t = data.targets || {};
+    const cards = [
+      ['Received Today', g.receivedToday, t.receivedToday, 'Jobs entered today'],
+      ['Shipped Today', g.shippedToday, t.shippedToday, 'Jobs with today\'s ship date'],
+      ['Shipped This Month', g.shippedMonth, t.shippedMonth, 'Since the 1st'],
+      ['Shipped This Year', g.shippedYear, t.shippedYear, g.yearHistoryLoaded ? 'Since January 1' : 'Still loading this year\'s history…'],
+    ];
+    $('gauges').innerHTML = cards.map(([label, v = 0, target = 0, note]) => `
+      <div class="card gauge">
+        <h3>${label}</h3>
+        ${M.gaugeSvg(v, target)}
+        <div class="g-value num">${M.money(v).replace('—', '$0')}</div>
+        <div class="g-foot">${target ? Math.round((v / target) * 100) + '% of ' + M.money(target) + ' target' : 'No target set'} · ${note}</div>
+      </div>`).join('');
+  }
+
   // ---------------- workload chart ----------------
   // Late + the next 5 business days (today counts if it's a weekday). Jobs due on a
   // Saturday or Sunday are counted on the following Monday.
@@ -210,6 +228,7 @@
     $('banner').innerHTML = bf && !bf.done
       ? `<div class="banner">First-time scan in progress (${Math.round(bf.progress * 100)}% of job #${bf.from}–#${bf.to}). Older open jobs will keep appearing until it finishes.</div>` : '';
     renderKpis(open, invoiced, today);
+    renderGauges();
     renderWorkload(open, today);
     renderStages(open);
     renderSales(invoiced, today, scan);

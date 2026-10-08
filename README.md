@@ -3,6 +3,7 @@
 A web dashboard showing open jobs from Printer's Plan. It reads job data from the Web2Plan listener (`Listener.aspx`) at `marathonprinting.pagepath.com`.
 
 - **Office view** (`/`): late, due today and upcoming counts; a workload chart; jobs by stage; shipped totals; and a searchable, sortable job table. Click any row to see its line items and work-order note.
+- **Goal gauges** (office view): Received Today, Shipped Today, Shipped This Month and Shipped This Year, each against a target. Change the targets at **`/settings`** (the "Edit targets" link): type the numbers and click Save. No code changes are needed.
 - **Reprints:** any job with "reprint" in its title is flagged red, with a Reprint label, on both views.
 - **TV view** (`/tv`): a full-screen display for the shop floor (works on vertical and horizontal screens) showing Late, Due today and Due next workday. It refreshes every minute and pages through long lists on its own.
 
@@ -31,6 +32,7 @@ Job types the listener understands (`todo=GetJob&type=…&jobno=…`): `Order` (
    | `START_JOBNO` | a recent job number, e.g. `267200` |
    | `DASHBOARD_PASSWORD` | *optional* — leave it out for no login screen at all |
    | `DISPLAY_KEY` | *optional* — with a password set, lets displays skip the login via `/tv?key=<DISPLAY_KEY>` |
+   | `SETTINGS_PIN` | *optional, recommended*: a PIN needed to save gauge targets on `/settings` |
    | `SESSION_SECRET` | *optional* — any long random string (keeps logins valid across restarts) |
 
 3. Under **Settings → Networking**, click **Generate Domain** to get a URL.
@@ -51,6 +53,15 @@ Railway detects Node and runs `npm start` automatically. The health check is at 
 | `INVOICED_KEEP_DAYS` | `120` | How long shipped jobs are kept for totals |
 | `TZ_NAME` | `America/Los_Angeles` | Time zone used to decide "today" |
 | `LABELS_JSON` | — | Names for status codes and people (see below) |
+
+## Gauge targets
+
+Targets are saved to `DATA_DIR/settings.json`, so they persist across redeploys when a volume is attached. The first time it starts, the dashboard uses the old dashboard's targets: $15,833.36 per day for received and shipped, $348,334 per month and $3,580,367 per year. You can also set starting values with `TARGET_RECEIVED_TODAY`, `TARGET_SHIPPED_TODAY`, `TARGET_SHIPPED_MONTH` and `TARGET_SHIPPED_YEAR`.
+
+- **Shipped** means a job has a ship date (invoiced or not), valued at its full total.
+- **Received** means jobs entered today. Jobs that aren't priced yet count as $0 until they are.
+- For **Shipped This Year**, the server walks back through History once after deploying, to pick up everything shipped since January 1. That takes roughly 20–30 minutes. The gauge says "Still loading" until it's done.
+- Gauge colors are relative to the target: red below 50%, orange 50–75%, yellow 75–90%, green 90% and up.
 
 ## Naming the status codes
 

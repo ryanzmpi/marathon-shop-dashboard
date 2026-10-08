@@ -4,6 +4,7 @@ const path = require('path');
 const crypto = require('crypto');
 const cfg = require('./config');
 const scanner = require('./scanner');
+const settings = require('./settings');
 
 const PUBLIC = path.join(__dirname, '..', 'public');
 const TYPES = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.svg': 'image/svg+xml', '.ico': 'image/x-icon' };
@@ -106,8 +107,26 @@ const server = http.createServer(async (req, res) => {
 
   if (p === '/api/data') {
     const snap = scanner.snapshot();
-    return send(res, 200, JSON.stringify({ generatedAt: new Date().toISOString(), today: scanner.todayLocal(), timeZone: cfg.timeZone, labels, ...snap }), 'application/json');
+    return send(res, 200, JSON.stringify({ generatedAt: new Date().toISOString(), today: scanner.todayLocal(), timeZone: cfg.timeZone, labels, targets: settings.getTargets(), ...snap }), 'application/json');
   }
+  // Gauge targets. Saving requires SETTINGS_PIN when that variable is set in Railway.
+  if (p === '/api/settings' && req.method === 'GET') {
+    return send(res, 200, JSON.stringify({ targets: settings.getTargets(), pinRequired: !!cfg.settingsPin }), 'application/json');
+  }
+  if (p === '/api/settings' && req.method === 'POST') {
+    let body;
+    try { body = JSON.parse(await readBody(req)); } catch { return send(res, 400, '{"error":"bad request"}', 'application/json'); }
+    if (cfg.settingsPin && String(body.pin || '') !== cfg.settingsPin) {
+      await new Promise((r) => setTimeout(r, 1000));
+      return send(res, 403, '{"error":"Wrong PIN"}', 'application/json');
+    }
+    try {
+      return send(res, 200, JSON.stringify({ targets: settings.setTargets(body.targets || {}) }), 'application/json');
+    } catch (e) {
+      return send(res, 400, JSON.stringify({ error: e.message }), 'application/json');
+    }
+  }
+  if (p === '/settings' || p === '/settings.html') return sendFile(res, 'settings.html');
   if (p === '/' || p === '/index.html') return sendFile(res, 'index.html');
   if (p === '/tv' || p === '/tv.html') return sendFile(res, 'tv.html');
   if (/^\/[a-z0-9_-]+\.(css|js|svg|ico)$/i.test(p)) return sendFile(res, p.slice(1));

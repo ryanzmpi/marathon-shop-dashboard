@@ -16,6 +16,7 @@ const state = {
   version: 1,
   maxJobNo: 0,
   open: {}, // jobNo -> job
+  ytd: { jobs: {}, next: null, done: false, scanned: 0 }, // year-to-date shipped: jobNo -> [dateShipped, total]
   invoiced: {}, // jobNo -> slim job (recent only)
   backfill: null, // { from, to, next, done }
   lastCycleAt: null,
@@ -30,6 +31,8 @@ function load() {
     const saved = JSON.parse(fs.readFileSync(STATE_FILE, 'utf8'));
     if (saved.version === 1) Object.assign(state, saved, { phase: 'starting', startedAt: state.startedAt });
     console.log(`[scan] loaded cache: ${Object.keys(state.open).length} open jobs, newest #${state.maxJobNo}`);
+    if (!state.ytd || !state.ytd.jobs) state.ytd = { jobs: {}, next: null, done: false, scanned: 0 };
+    for (const v of Object.values(state.invoiced)) recordShipped(v); // seed from what we already have
   } catch {
     console.log('[scan] no cache found, starting fresh');
   }
@@ -64,6 +67,60 @@ function slimInvoiced(job) {
 }
 function recordInvoiced(job) {
   if (daysAgo(job.dateShipped || job.dateIn) <= cfg.invoicedKeepDays) state.invoiced[job.jobNo] = slimInvoiced(job);
+  recordShipped(job);
+}
+
+// ---------- year-to-date shipped totals (for the gauges) ----------
+// Only the ship date and total are kept per job, so a whole year stays small.
+const yearStart = () => todayLocal().slice(0, 4) + '-01-01';
+function recordShipped(job) {
+  if (!job.dateShipped) return;
+  if (!state.ytd) state.ytd = { jobs: {}, next: null, done: false, scanned: 0 };
+  state.ytd.jobs[job.jobNo] = [job.dateShipped, job.total ?? job.subtotal ?? 0];
+}
+
+// One-time walk back through History from the newest job until we're well past January 1,
+// so "Shipped This Year" includes everything invoiced before the dashboard started.
+// Runs after the open-job backfill, a few requests at a time.
+let ytdRunning = false;
+async function runYearScan() {
+  const y = state.ytd;
+  if (ytdRunning || y.done || (state.backfill && !state.backfill.done)) return;
+  ytdRunning = true;
+  if (!y.next) y.next = state.maxJobNo;
+  const start = yearStart();
+  let oldStreak = 0, emptyStreak = 0;
+  console.log(`[ytd] scanning History back from #${y.next} to ${start}`);
+  try {
+    while (y.next > 0 && oldStreak < 150 && emptyStreak < 1500) {
+      const chunk = [];
+      for (let i = 0; i < cfg.maxConcurrency * 3 && y.next > 0; i++) chunk.push(y.next--);
+      const results = await Promise.all(chunk.map(async (n) => {
+        try { return await getJob('History', n); } catch { return undefined; }
+      }));
+      for (const h of results) {
+        y.scanned++;
+        if (!h) { emptyStreak++; continue; }
+        emptyStreak = 0;
+        recordShipped(h);
+        const d = h.dateShipped || h.dateIn || '';
+        oldStreak = d && d < start ? oldStreak + 1 : 0;
+      }
+      save();
+    }
+    y.done = true;
+    y.finishedAt = new Date().toISOString();
+    console.log(`[ytd] done: ${Object.keys(y.jobs).length} shipped jobs on record`);
+  } finally {
+    ytdRunning = false;
+    save();
+  }
+}
+
+function pruneYtd() {
+  // keep this year and last year only
+  const cutoff = String(+todayLocal().slice(0, 4) - 1) + '-01-01';
+  for (const [k, v] of Object.entries(state.ytd.jobs)) if (v[0] < cutoff) delete state.ytd.jobs[k];
 }
 
 // Does this job number exist at all (open or invoiced)? Records what it finds.
@@ -191,12 +248,14 @@ async function cycle() {
       state.backfill.next = state.backfill.from;
     }
     runBackfill(); // runs alongside cycles; shares the request limiter
+    runYearScan(); // after the backfill finishes; also shares the limiter
     state.phase = 'checking for new jobs';
     await findNewJobs();
     state.phase = 'refreshing open jobs';
     await recheckOpen();
     await upgradeInvoiced();
     pruneInvoiced();
+    pruneYtd();
     state.cycles++;
     state.lastCycleAt = new Date().toISOString();
     state.lastCycleMs = Date.now() - t0;
@@ -216,6 +275,31 @@ function start() {
   setInterval(cycle, cfg.refreshSeconds * 1000);
 }
 
+// Dollar totals for the gauges. Shipped = has a ship date (invoiced or not); received = entered today.
+function gaugeValues(openAll) {
+  const t = todayLocal(), m = t.slice(0, 8) + '01', y = t.slice(0, 4) + '-01-01';
+  const shipped = { ...state.ytd.jobs };
+  for (const j of openAll) if (j.dateShipped) shipped[j.jobNo] = [j.dateShipped, j.total ?? j.subtotal ?? 0];
+  let day = 0, month = 0, year = 0;
+  for (const [d, amt] of Object.values(shipped)) {
+    if (d >= y && d <= t) year += amt;
+    if (d >= m && d <= t) month += amt;
+    if (d === t) day += amt;
+  }
+  const seen = new Set();
+  let received = 0;
+  for (const j of [...openAll, ...Object.values(state.invoiced)]) {
+    if (j.dateIn !== t || seen.has(j.jobNo)) continue;
+    seen.add(j.jobNo);
+    received += j.total ?? j.subtotal ?? 0;
+  }
+  const r = (v) => Math.round(v * 100) / 100;
+  return {
+    receivedToday: r(received), shippedToday: r(day), shippedMonth: r(month), shippedYear: r(year),
+    yearHistoryLoaded: !!state.ytd.done, yearHistoryScanned: state.ytd.scanned || 0,
+  };
+}
+
 function snapshot() {
   const bf = state.backfill;
   // A job drops off the open list as soon as a ship date is entered in Printer's Plan,
@@ -224,6 +308,7 @@ function snapshot() {
   const shipped = { ...state.invoiced };
   for (const j of all) if (j.dateShipped) shipped[j.jobNo] = slimInvoiced(j);
   return {
+    gauges: gaugeValues(all),
     open: all.filter((j) => !j.dateShipped),
     invoiced: Object.values(shipped),
     scan: {

@@ -87,13 +87,28 @@ main { padding: 20px 24px 40px; margin: 0 auto; display: grid; gap: 20px; }
 .kpi { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px; cursor: default; }
 .kpi[data-bucket] { cursor: pointer; }
 .kpi[data-bucket]:hover { border-color: var(--accent); }
-.kpi .label { font-size: 12px; color: var(--text-2); display: flex; align-items: center; gap: 6px; }
+.kpi { min-width: 0; }
+.kpi .label { font-size: 12px; color: var(--text-2); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 .kpi .value { font-size: 28px; font-weight: 650; letter-spacing: -0.02em; margin-top: 2px; }
 .kpi .value .of { font-size: 18px; font-weight: 600; color: var(--text-2); margin-left: 1px; }
 .kpi .foot { font-size: 12px; color: var(--muted); }
 .kpi.critical { border-left: 4px solid var(--critical); }
 .kpi.warning { border-left: 4px solid var(--warning); }
 .icon { display: inline-block; width: 14px; height: 14px; flex: none; }
+
+/* ---------- goal gauges ---------- */
+.gauges-head { display: flex; align-items: baseline; gap: 14px; margin: 2px 2px 10px; }
+.gauges-head h2 { font-size: 14px; margin: 0; font-weight: 650; }
+.gauges-head a { font-size: 13px; }
+.gauges { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+@media (max-width: 1100px) { .gauges { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 560px) { .gauges { grid-template-columns: 1fr; } }
+.gauge { text-align: center; padding: 12px 14px 14px; }
+.gauge h3 { margin: 0; font-size: 14px; font-weight: 600; text-align: left; }
+.gauge-svg { width: 100%; max-width: 260px; display: block; margin: 4px auto 0; }
+.gauge-svg .g-lab { font: 600 10px var(--font); fill: var(--text-2); }
+.gauge .g-value { font-size: 28px; font-weight: 700; letter-spacing: -0.02em; margin-top: 2px; }
+.gauge .g-foot { font-size: 12px; color: var(--muted); }
 
 .grid-2 { display: grid; grid-template-columns: 3fr 2fr; gap: 20px; }
 @media (max-width: 1000px) { .grid-2 { grid-template-columns: 1fr; } }
@@ -179,4 +194,10 @@ tr.job.reprint:hover td { background: var(--critical-soft); filter: brightness(0
   main { padding: 16px; }
   .top { padding: 12px 16px; }
   .kpi .value { font-size: 24px; }
+}
+
+/* narrow screens: stack "shipped / due" labels so they fit over the bars */
+@media (max-width: 900px) {
+  .vbars .val { font-size: 10px; line-height: 1.15; }
+  .vbars .val .of { display: block; }
 }

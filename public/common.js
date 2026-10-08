@@ -152,6 +152,35 @@ const MSD = (() => {
     return `${left}<span class="of">/${total}</span>`;
   }
 
+  // ---------- half-circle goal gauge (SVG) ----------
+  // Bands are fractions of the target: red < 50%, orange 50-75%, yellow 75-90%, green 90%+.
+  // The scale runs 0 → target, or a bit past the value when the target has been beaten.
+  const GAUGE_BANDS = [[0, 0.5, '#dd4b5a'], [0.5, 0.75, '#e98f3e'], [0.75, 0.9, '#f6e46a'], [0.9, Infinity, '#74b27d']];
+  function gaugeSvg(value, target) {
+    const cx = 120, cy = 118, r = 82, w = 34;
+    const max = Math.max(target || 1, value > target ? value * 1.06 : 0);
+    const pt = (f, rad = r) => { const a = Math.PI * (1 - Math.min(1, Math.max(0, f))); return [cx + rad * Math.cos(a), cy - rad * Math.sin(a)]; };
+    const arc = (f1, f2) => { const [x1, y1] = pt(f1), [x2, y2] = pt(f2); return `M${x1.toFixed(2)} ${y1.toFixed(2)} A${r} ${r} 0 0 1 ${x2.toFixed(2)} ${y2.toFixed(2)}`; };
+    const bands = GAUGE_BANDS.map(([a, b, c]) => {
+      const f1 = (a * target) / max, f2 = Math.min(1, (Math.min(b, 1e9) * target) / max);
+      return f2 > f1 ? `<path d="${arc(f1, b === Infinity ? 1 : f2)}" stroke="${c}" stroke-width="${w}" fill="none"/>` : '';
+    }).join('');
+    const tf = target / max;
+    const [tx1, ty1] = pt(tf, r - w / 2 - 4), [tx2, ty2] = pt(tf, r + w / 2 + 10);
+    const tick = max > target * 1.001
+      ? `<line x1="${tx1}" y1="${ty1}" x2="${tx2}" y2="${ty2}" stroke="var(--text-2)" stroke-width="1.5" stroke-dasharray="3 3"/>
+         <text x="${tx2}" y="${ty2 - 5}" text-anchor="middle" class="g-lab">${money(target)}</text>`
+      : '';
+    const [nx, ny] = pt(value / max, r + w / 2 + 2);
+    return `<svg viewBox="0 0 240 140" class="gauge-svg" role="img" aria-label="${money(value)} of ${money(target)} target">
+      ${bands}${tick}
+      <line x1="${cx}" y1="${cy}" x2="${nx.toFixed(2)}" y2="${ny.toFixed(2)}" stroke="var(--text)" stroke-width="6" stroke-linecap="round"/>
+      <circle cx="${cx}" cy="${cy}" r="8" fill="var(--text)"/>
+      <text x="${cx - r - w / 2}" y="${cy + 16}" class="g-lab">0</text>
+      <text x="${cx + r + w / 2}" y="${cy + 16}" text-anchor="end" class="g-lab">${money(max > target * 1.001 ? max : target)}</text>
+    </svg>`;
+  }
+
   // Stage colours come from labels.stageColors (by stage name). Chips use dark text since
   // the colours are bright.
   const stageColor = (name) => (L.stageColors || {})[name] || '';
@@ -202,5 +231,5 @@ const MSD = (() => {
     tipEl.style.left = x + 'px'; tipEl.style.top = y + 'px';
   }
 
-  return { jobsDueOn, dueTodayFraction, stageColor, stageChip, ignored, stage, stageCode, amount, prevWorkday, workdayOf, workdayBefore, needBy, needByText, cmpNeedBy, cmpDueThenNB, isReprint, REPRINT_BADGE, parse, addDays, diffDays, isWeekend, nextWorkday, weekStart, fmtShort, fmtDay, fmtLong, money, moneyK, esc, lab, jobStage, itemStage, mainLine, person, bucket, BUCKET_NAMES, ICONS, dueBadge, load, stageList, scanPill, tip };
+  return { gaugeSvg, jobsDueOn, dueTodayFraction, stageColor, stageChip, ignored, stage, stageCode, amount, prevWorkday, workdayOf, workdayBefore, needBy, needByText, cmpNeedBy, cmpDueThenNB, isReprint, REPRINT_BADGE, parse, addDays, diffDays, isWeekend, nextWorkday, weekStart, fmtShort, fmtDay, fmtLong, money, moneyK, esc, lab, jobStage, itemStage, mainLine, person, bucket, BUCKET_NAMES, ICONS, dueBadge, load, stageList, scanPill, tip };
 })();

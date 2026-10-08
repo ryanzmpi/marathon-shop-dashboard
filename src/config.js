@@ -19,6 +19,8 @@ module.exports = {
   displayKey: process.env.DISPLAY_KEY || '',
   sessionSecret: process.env.SESSION_SECRET || process.env.DASHBOARD_PASSWORD || '',
   sessionDays: num(process.env.SESSION_DAYS, 365),
+  // Optional PIN required to change gauge targets on the /settings page.
+  settingsPin: process.env.SETTINGS_PIN || '',
 
   timeZone: process.env.TZ_NAME || 'America/Los_Angeles',
 
