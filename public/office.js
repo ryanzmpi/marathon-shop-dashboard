@@ -86,33 +86,46 @@
 
   // ---------------- sales chart ----------------
   // The last 10 business days, ending today (or the last weekday if today is a weekend).
-  // Anything shipped on a Saturday or Sunday is counted on the Friday before.
+  // Each day shows "shipped $ / due $": dollars shipped that day out of the dollar total of
+  // every job due that day (already shipped or still open). Weekend ship dates count on the
+  // Friday before; weekend due dates count on the Monday after (same as the workload chart).
   function renderSales(inv, today, scan) {
     const days = [];
     let d = M.isWeekend(today) ? M.prevWorkday(today) : today;
     for (let i = 0; i < 10; i++, d = M.prevWorkday(d)) days.unshift(d);
+    const openNos = new Set(data.open.map((j) => j.jobNo));
+    const everyJob = [...data.open, ...inv.filter((j) => !openNos.has(j.jobNo))];
+    const sum = (a) => a.reduce((t, j) => t + M.amount(j), 0);
     const cols = days.map((day) => {
       const jobs = inv.filter((j) => j.dateShipped && M.workdayBefore(j.dateShipped) === day);
-      return { d: day, jobs, amt: jobs.reduce((s, j) => s + M.amount(j), 0) };
+      const dueJobs = everyJob.filter((j) => j.dateDue && M.workdayOf(j.dateDue) === day);
+      return { d: day, jobs, amt: sum(jobs), dueJobs, due: sum(dueJobs) };
     });
-    const max = Math.max(1, ...cols.map((c) => c.amt));
+    const max = Math.max(1, ...cols.map((c) => Math.max(c.amt, c.due)));
     $('sales').innerHTML = `
-      <div class="vbars" style="height:110px">${cols.map((c, i) => `
+      <div class="vbars" style="height:120px">${cols.map((c, i) => {
+        const outer = Math.max(c.amt, c.due);
+        return `
         <div class="col" data-i="${i}">
-          ${c.amt ? `<div class="val num">${M.moneyK(c.amt)}</div>` : ''}
-          <div class="bar" style="height:${(c.amt / max) * 82}%"></div>
+          ${outer ? `<div class="val num">${M.moneyK(c.amt)}<span class="of">/${M.moneyK(c.due)}</span></div>` : ''}
+          <div class="pair" style="height:${(outer / max) * 78}%">
+            ${c.due ? `<div class="ghost" style="height:${(c.due / outer) * 100}%"></div>` : ''}
+            <div class="bar" style="height:${outer ? (c.amt / outer) * 100 : 0}%"></div>
+          </div>
           <div class="hit"></div>
-        </div>`).join('')}
+        </div>`;
+      }).join('')}
       </div>
       <div class="vlabels">${cols.map((c) => `<span class="${c.d === today ? 'strong' : ''}">${c.d === today ? 'Today' : M.fmtDay(c.d).split(' ')[0]}<br>${M.fmtShort(c.d)}</span>`).join('')}</div>`;
     $('sales').querySelectorAll('.col').forEach((el) => {
       const c = cols[+el.dataset.i];
-      const html = `<b>${M.fmtLong(c.d)}</b><br>${M.money(c.amt).replace('—', '$0')} · ${c.jobs.length} job${c.jobs.length === 1 ? '' : 's'}`;
+      const n = (k) => `${k} job${k === 1 ? '' : 's'}`;
+      const html = `<b>${M.fmtLong(c.d)}</b><br>Shipped: ${M.money(c.amt).replace('—', '$0')} · ${n(c.jobs.length)}<br>Due: ${M.money(c.due).replace('—', '$0')} · ${n(c.dueJobs.length)}`;
       el.addEventListener('mousemove', (e) => M.tip(e, html));
       el.addEventListener('mouseleave', (e) => M.tip(e, null));
     });
     const bf = scan.backfill;
-    $('salesHint').textContent = 'Job total by date shipped · last 10 business days' + (bf && !bf.done ? ' · still loading history, totals will fill in' : '');
+    $('salesHint').textContent = 'Shipped $ / due $ by day · solid = shipped, outline = total of jobs due that day · last 10 business days' + (bf && !bf.done ? ' · still loading history, totals will fill in' : '');
   }
 
   // ---------------- table ----------------
