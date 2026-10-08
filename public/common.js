@@ -54,6 +54,10 @@ const MSD = (() => {
     return '';
   }
 
+  // Any job with "reprint" in its title gets flagged red everywhere.
+  const isReprint = (j) => /reprint/i.test(j.title || '');
+  const REPRINT_BADGE = '<span class="badge reprint">Reprint</span> ';
+
   async function load() {
     const key = new URLSearchParams(location.search).get('key');
     const res = await fetch('/api/data' + (key ? '?key=' + encodeURIComponent(key) : ''), { cache: 'no-store' });
@@ -101,5 +105,5 @@ const MSD = (() => {
     tipEl.style.left = x + 'px'; tipEl.style.top = y + 'px';
   }
 
-  return { parse, addDays, diffDays, isWeekend, nextWorkday, weekStart, fmtShort, fmtDay, fmtLong, money, moneyK, esc, lab, jobStage, itemStage, mainLine, person, bucket, BUCKET_NAMES, ICONS, dueBadge, load, stageList, scanPill, tip };
+  return { isReprint, REPRINT_BADGE, parse, addDays, diffDays, isWeekend, nextWorkday, weekStart, fmtShort, fmtDay, fmtLong, money, moneyK, esc, lab, jobStage, itemStage, mainLine, person, bucket, BUCKET_NAMES, ICONS, dueBadge, load, stageList, scanPill, tip };
 })();

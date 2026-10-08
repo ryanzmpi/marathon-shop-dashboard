@@ -3,6 +3,7 @@
 A web dashboard showing open jobs from Printer's Plan. It reads job data from the Web2Plan listener (`Listener.aspx`) at `marathonprinting.pagepath.com`.
 
 - **Office view** (`/`): late, due today and upcoming counts; a workload chart; jobs by stage; shipped totals; and a searchable, sortable job table. Click any row to see its line items and work-order note.
+- **Reprints:** any job with "reprint" in its title is flagged red, with a Reprint label, on both views.
 - **TV view** (`/tv`): a full-screen display for the shop floor (works on vertical and horizontal screens) showing Late, Due today and Due next workday. It refreshes every minute and pages through long lists on its own.
 
 It only makes **read-only GET requests** to `Listener.aspx`. It never calls `XmlListener.aspx`, which creates orders.

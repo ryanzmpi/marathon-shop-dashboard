@@ -12,9 +12,10 @@
 
   function jobRow(j, today, showLate) {
     const lateBy = showLate ? -M.diffDays(j.dateDue, today) : 0;
-    return `<div class="tv-job">
+    const rp = M.isReprint(j);
+    return `<div class="tv-job${rp ? ' reprint' : ''}">
       <div class="no">${j.jobNo}</div>
-      <div class="t">${M.esc(j.title || '(no title)')}</div>
+      <div class="t">${rp ? M.REPRINT_BADGE : ''}${M.esc(j.title || '(no title)')}</div>
       <div class="m">
         ${lateBy ? `<span class="lateby">${lateBy}d late</span>` : ''}
         <span>${M.esc(j.customer || '')}</span>

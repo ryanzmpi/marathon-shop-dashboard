@@ -152,6 +152,11 @@ td .cust { color: var(--text-2); font-size: 12px; }
 .badge { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; padding: 1px 7px; border-radius: 999px; }
 .badge.late { background: var(--critical-soft); color: var(--critical-ink); }
 .badge.today { background: var(--warning-soft); color: var(--warning-ink); }
+/* reprints: whole row flagged red, plus a label so it isn't colour alone */
+tr.job.reprint td { background: var(--critical-soft); }
+tr.job.reprint td:first-child { box-shadow: inset 4px 0 0 var(--critical); }
+tr.job.reprint:hover td { background: var(--critical-soft); filter: brightness(0.97); }
+.badge.reprint { background: var(--critical); color: #fff; margin-right: 6px; vertical-align: 1px; }
 .stage { display: inline-block; font-size: 12px; padding: 1px 8px; border-radius: 6px; background: var(--surface-2); color: var(--text-2); white-space: nowrap; }
 
 /* ---------- login ---------- */

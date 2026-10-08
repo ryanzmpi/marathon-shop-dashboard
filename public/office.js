@@ -3,7 +3,7 @@
   const store = { get(k, d) { try { return localStorage.getItem(k) ?? d; } catch { return d; } }, set(k, v) { try { localStorage.setItem(k, v); } catch {} } };
 
   let data = null;
-  const f = { q: '', bucket: 'all', stage: '', csr: '', rep: '', date: '' };
+  const f = { q: '', bucket: 'all', stage: '', csr: '', date: '' };
   let sort = { key: 'due', dir: 1 };
   const expanded = new Set();
   let stageMode = store.get('msd.stageMode', 'job');
@@ -117,8 +117,6 @@
     { key: 'title', label: 'Customer / title', val: (j) => (j.customer || '').toLowerCase() },
     { key: 'stage', label: 'Stage', val: (j) => stageOf(j) },
     { key: 'csr', label: 'CSR', val: (j) => M.person('csr', j.csrNo) },
-    { key: 'rep', label: 'Sales', val: (j) => M.person('salesRep', j.repNo) },
-    { key: 'in', label: 'Entered', val: (j) => j.dateIn || '' },
     { key: 'amt', label: 'Amount', val: (j) => j.subtotal || 0, right: true },
   ];
 
@@ -132,7 +130,6 @@
       + (f.date ? `<button class="chip" data-b="clear-date" aria-pressed="true">Due ${M.fmtDay(f.date)} ✕</button>` : '');
     fillSelect($('fStage'), 'Stage', M.stageList(open, stageOf).map((s) => s[0]), f.stage);
     fillSelect($('fCsr'), 'CSR', [...new Set(open.map((j) => M.person('csr', j.csrNo)))].sort(), f.csr);
-    fillSelect($('fRep'), 'Sales', [...new Set(open.map((j) => M.person('salesRep', j.repNo)))].sort(), f.rep);
 
     const q = f.q.trim().toLowerCase();
     let rows = open.filter((j) =>
@@ -140,7 +137,6 @@
       (!f.date || j.dateDue === f.date) &&
       (!f.stage || stageOf(j) === f.stage) &&
       (!f.csr || M.person('csr', j.csrNo) === f.csr) &&
-      (!f.rep || M.person('salesRep', j.repNo) === f.rep) &&
       (!q || [j.jobNo, j.title, j.customer, j.po, j.buyer, j.shipTo].join(' ').toLowerCase().includes(q)));
     const col = COLS.find((c) => c.key === sort.key);
     rows.sort((a, b) => {
@@ -152,18 +148,17 @@
     $('thead').innerHTML = COLS.map((c) => `<th data-k="${c.key}" class="${c.right ? 'right' : ''}" aria-sort="${sort.key === c.key ? (sort.dir > 0 ? 'ascending' : 'descending') : 'none'}">${c.label}</th>`).join('');
     $('rows').innerHTML = rows.map((j) => {
       const b = M.bucket(j, today);
-      const tr = `<tr class="job" data-j="${j.jobNo}">
+      const rp = M.isReprint(j);
+      const tr = `<tr class="job${rp ? ' reprint' : ''}" data-j="${j.jobNo}">
         <td class="num">${j.jobNo}</td>
         <td><span class="due ${b === 'late' || b === 'today' ? b : ''}">${M.fmtDay(j.dateDue)}</span> ${M.dueBadge(j, today)}</td>
-        <td class="title"><div>${M.esc(j.title)}</div><div class="cust">${M.esc(j.customer)}</div></td>
+        <td class="title"><div>${rp ? M.REPRINT_BADGE : ''}${M.esc(j.title)}</div><div class="cust">${M.esc(j.customer)}</div></td>
         <td><span class="stage">${M.esc(stageOf(j))}</span></td>
         <td>${M.esc(M.person('csr', j.csrNo))}</td>
-        <td>${M.esc(M.person('salesRep', j.repNo))}</td>
-        <td class="num">${M.fmtShort(j.dateIn)}</td>
         <td class="num right">${M.money(j.subtotal)}</td>
       </tr>`;
       return tr + (expanded.has(j.jobNo) ? detail(j) : '');
-    }).join('') || `<tr><td colspan="8" class="hint" style="padding:20px">No jobs match.</td></tr>`;
+    }).join('') || `<tr><td colspan="6" class="hint" style="padding:20px">No jobs match.</td></tr>`;
   }
 
   function detail(j) {
@@ -171,7 +166,7 @@
       const what = i.serNo === 0 ? `<b>${M.esc(i.description || 'Item ' + i.itemNo)}</b>${i.qty ? ' · qty ' + i.qty.toLocaleString() : ''}` : `${M.esc(M.lab('service', i.serNo, 'Service'))}${i.empNo ? ' · ' + M.esc(M.person('employee', i.empNo)) : ''}`;
       return `<div class="item"><span class="k">Line ${i.itemNo}${i.subNo ? '.' + i.subNo : ''}</span><span>${what}</span><span class="stage">${M.esc(M.lab('itemStatus', i.status, 'Status'))}</span></div>`;
     }).join('');
-    return `<tr class="detail"><td colspan="8">
+    return `<tr class="detail"><td colspan="6">
       <div style="display:flex;gap:28px;flex-wrap:wrap;font-size:12px;color:var(--text-2)">
         ${j.buyer ? `<span>Ordered by <b>${M.esc(j.buyer)}</b></span>` : ''}
         ${j.po ? `<span>PO <b>${M.esc(j.po)}</b></span>` : ''}
@@ -214,7 +209,6 @@
   $('q').addEventListener('input', (e) => { f.q = e.target.value; render(); });
   $('fStage').addEventListener('change', (e) => { f.stage = e.target.value; render(); });
   $('fCsr').addEventListener('change', (e) => { f.csr = e.target.value; render(); });
-  $('fRep').addEventListener('change', (e) => { f.rep = e.target.value; render(); });
   $('stageMode').addEventListener('change', (e) => { stageMode = e.target.value; store.set('msd.stageMode', stageMode); f.stage = ''; render(); });
 
   async function refresh() {
