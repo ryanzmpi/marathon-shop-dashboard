@@ -54,6 +54,49 @@ const MSD = (() => {
     return '';
   }
 
+  // "Need by" date, typed into the work order note as e.g. "NB 10/09/26" (year optional).
+  // Returns 'YYYY-MM-DD' or null.
+  function needBy(j) {
+    if (j._nb !== undefined) return j._nb;
+    const m = /\bNB\s*[:\-]?\s*(\d{1,2})[\/\-.](\d{1,2})(?:[\/\-.](\d{2,4}))?/i.exec(j.workOrderNote || '');
+    let out = null;
+    if (m) {
+      const mo = +m[1], d = +m[2];
+      let y = m[3] ? +m[3] : +(j.dateIn || '').slice(0, 4) || new Date().getFullYear();
+      if (y < 100) y += 2000;
+      if (mo >= 1 && mo <= 12 && d >= 1 && d <= 31) {
+        out = `${y}-${String(mo).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+        // Lands well before the job came in: no year typed means next year; a typed year that's
+        // way off (e.g. "10/11/24" on a job entered in 2026) is a typo, so use the job's year.
+        if (j.dateIn && diffDays(out, j.dateIn) < -60) {
+          const jy = +j.dateIn.slice(0, 4);
+          out = `${m[3] ? jy : y + 1}${out.slice(4)}`;
+          if (diffDays(out, j.dateIn) < -60) out = `${+out.slice(0, 4) + 1}${out.slice(4)}`;
+        }
+      }
+    }
+    j._nb = out;
+    return out;
+  }
+  // What was typed after "NB" when it isn't a full date (e.g. "NB 11/?"), for display only.
+  function needByText(j) {
+    const m = /\bNB\b[ \t:]*([^\r\n|]{0,12})/i.exec(j.workOrderNote || '');
+    return m && m[1].trim() ? 'NB ' + m[1].trim() : '';
+  }
+  // Jobs with no NB date come first, then earliest NB date.
+  function cmpNeedBy(a, b) {
+    const x = needBy(a), y = needBy(b);
+    if (!x && !y) return 0;
+    if (!x) return -1;
+    if (!y) return 1;
+    return x < y ? -1 : x > y ? 1 : 0;
+  }
+  // Standard order: due date, then NB date (no NB first), then job number.
+  function cmpDueThenNB(a, b) {
+    const x = a.dateDue || '9999', y = b.dateDue || '9999';
+    return (x < y ? -1 : x > y ? 1 : 0) || cmpNeedBy(a, b) || a.jobNo - b.jobNo;
+  }
+
   // Any job with "reprint" in its title gets flagged red everywhere.
   const isReprint = (j) => /reprint/i.test(j.title || '');
   const REPRINT_BADGE = '<span class="badge reprint">Reprint</span> ';
@@ -105,5 +148,5 @@ const MSD = (() => {
     tipEl.style.left = x + 'px'; tipEl.style.top = y + 'px';
   }
 
-  return { isReprint, REPRINT_BADGE, parse, addDays, diffDays, isWeekend, nextWorkday, weekStart, fmtShort, fmtDay, fmtLong, money, moneyK, esc, lab, jobStage, itemStage, mainLine, person, bucket, BUCKET_NAMES, ICONS, dueBadge, load, stageList, scanPill, tip };
+  return { needBy, needByText, cmpNeedBy, cmpDueThenNB, isReprint, REPRINT_BADGE, parse, addDays, diffDays, isWeekend, nextWorkday, weekStart, fmtShort, fmtDay, fmtLong, money, moneyK, esc, lab, jobStage, itemStage, mainLine, person, bucket, BUCKET_NAMES, ICONS, dueBadge, load, stageList, scanPill, tip };
 })();

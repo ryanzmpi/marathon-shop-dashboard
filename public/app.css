@@ -146,6 +146,8 @@ td .cust { color: var(--text-2); font-size: 12px; }
 .detail .item .k { color: var(--muted); min-width: 90px; }
 .detail pre { white-space: pre-wrap; font: 12px/1.4 var(--font); margin: 4px 0 0; color: var(--text-2); }
 
+.nb-cell { white-space: nowrap; }
+.muted { color: var(--muted); }
 .due { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; font-weight: 600; }
 .due.late { color: var(--critical-ink); }
 .due.today { color: var(--warning-ink); }

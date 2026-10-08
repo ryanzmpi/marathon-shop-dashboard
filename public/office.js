@@ -114,6 +114,7 @@
   const COLS = [
     { key: 'job', label: 'Job #', val: (j) => j.jobNo },
     { key: 'due', label: 'Due', val: (j) => j.dateDue || '9999' },
+    { key: 'nb', label: 'Need by', val: (j) => M.needBy(j) || '' },
     { key: 'title', label: 'Customer / title', val: (j) => (j.customer || '').toLowerCase() },
     { key: 'stage', label: 'Stage', val: (j) => stageOf(j) },
     { key: 'csr', label: 'CSR', val: (j) => M.person('csr', j.csrNo) },
@@ -140,8 +141,11 @@
       (!q || [j.jobNo, j.title, j.customer, j.po, j.buyer, j.shipTo].join(' ').toLowerCase().includes(q)));
     const col = COLS.find((c) => c.key === sort.key);
     rows.sort((a, b) => {
+      // Need-by column: no NB first, then by date, then due date.
+      if (sort.key === 'nb') return M.cmpNeedBy(a, b) * sort.dir || (a.dateDue || '9999').localeCompare(b.dateDue || '9999') || a.jobNo - b.jobNo;
       const x = col.val(a), y = col.val(b);
-      return (x < y ? -1 : x > y ? 1 : 0) * sort.dir || a.jobNo - b.jobNo;
+      // Ties (e.g. same due date) fall back to NB date (no NB first), then job number.
+      return (x < y ? -1 : x > y ? 1 : 0) * sort.dir || M.cmpNeedBy(a, b) || a.jobNo - b.jobNo;
     });
     $('countNote').textContent = `${rows.length} of ${open.length} jobs`;
 
@@ -152,13 +156,14 @@
       const tr = `<tr class="job${rp ? ' reprint' : ''}" data-j="${j.jobNo}">
         <td class="num">${j.jobNo}</td>
         <td><span class="due ${b === 'late' || b === 'today' ? b : ''}">${M.fmtDay(j.dateDue)}</span> ${M.dueBadge(j, today)}</td>
+        <td class="nb-cell">${M.needBy(j) ? `<b>${M.fmtDay(M.needBy(j))}</b>` : `<span class="muted">${M.esc(M.needByText(j)) || '—'}</span>`}</td>
         <td class="title"><div>${rp ? M.REPRINT_BADGE : ''}${M.esc(j.title)}</div><div class="cust">${M.esc(j.customer)}</div></td>
         <td><span class="stage">${M.esc(stageOf(j))}</span></td>
         <td>${M.esc(M.person('csr', j.csrNo))}</td>
         <td class="num right">${M.money(j.subtotal)}</td>
       </tr>`;
       return tr + (expanded.has(j.jobNo) ? detail(j) : '');
-    }).join('') || `<tr><td colspan="6" class="hint" style="padding:20px">No jobs match.</td></tr>`;
+    }).join('') || `<tr><td colspan="7" class="hint" style="padding:20px">No jobs match.</td></tr>`;
   }
 
   function detail(j) {
@@ -166,7 +171,7 @@
       const what = i.serNo === 0 ? `<b>${M.esc(i.description || 'Item ' + i.itemNo)}</b>${i.qty ? ' · qty ' + i.qty.toLocaleString() : ''}` : `${M.esc(M.lab('service', i.serNo, 'Service'))}${i.empNo ? ' · ' + M.esc(M.person('employee', i.empNo)) : ''}`;
       return `<div class="item"><span class="k">Line ${i.itemNo}${i.subNo ? '.' + i.subNo : ''}</span><span>${what}</span><span class="stage">${M.esc(M.lab('itemStatus', i.status, 'Status'))}</span></div>`;
     }).join('');
-    return `<tr class="detail"><td colspan="6">
+    return `<tr class="detail"><td colspan="7">
       <div style="display:flex;gap:28px;flex-wrap:wrap;font-size:12px;color:var(--text-2)">
         ${j.buyer ? `<span>Ordered by <b>${M.esc(j.buyer)}</b></span>` : ''}
         ${j.po ? `<span>PO <b>${M.esc(j.po)}</b></span>` : ''}

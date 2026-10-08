@@ -17,6 +17,7 @@
       <div class="no">${j.jobNo}</div>
       <div class="t">${rp ? M.REPRINT_BADGE : ''}${M.esc(j.title || '(no title)')}</div>
       <div class="m">
+        ${M.needBy(j) ? `<span class="nb">NB ${M.fmtShort(M.needBy(j))}</span>` : `<span class="nb none">${M.esc(M.needByText(j)) || 'No NB'}</span>`}
         ${lateBy ? `<span class="lateby">${lateBy}d late</span>` : ''}
         <span>${M.esc(j.customer || '')}</span>
         ${j.csrNo ? `<span>${M.esc(M.person('csr', j.csrNo))}</span>` : ''}
@@ -31,9 +32,10 @@
     $('date').textContent = M.fmtLong(today);
     $('scan').innerHTML = M.scanPill(scan);
     const nw = M.nextWorkday(today);
-    const late = open.filter((j) => M.bucket(j, today) === 'late').sort((a, b) => (a.dateDue < b.dateDue ? -1 : 1) || a.jobNo - b.jobNo);
-    const due = open.filter((j) => M.bucket(j, today) === 'today').sort((a, b) => a.jobNo - b.jobNo);
-    const next = open.filter((j) => j.dateDue === nw).sort((a, b) => a.jobNo - b.jobNo);
+    // Sorted by due date, then NB date (jobs with no NB first), then job number.
+    const late = open.filter((j) => M.bucket(j, today) === 'late').sort(M.cmpDueThenNB);
+    const due = open.filter((j) => M.bucket(j, today) === 'today').sort(M.cmpDueThenNB);
+    const next = open.filter((j) => j.dateDue === nw).sort(M.cmpDueThenNB);
     const week = open.filter((j) => j.dateDue && j.dateDue > today && M.diffDays(j.dateDue, today) <= 7).length;
 
     $('kpis').innerHTML = [

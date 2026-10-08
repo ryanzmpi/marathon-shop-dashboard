@@ -25,6 +25,7 @@ for (let n = NEWEST - 2200; n <= NEWEST; n++) {
     jobNo: n, type: isOpen ? 0 : 3, title: pick(PRODUCTS) + (rnd() < 0.3 ? ' - REPRINT' : ''), customer: pick(CUSTOMERS),
     status: isOpen ? pick([0, 0, 0, 1, 2, 5]) : 0, csr: pick([101, 102, 103]), rep: pick([200, 201, 203]),
     dateIn: day(-age), dateDue: rnd() < 0.04 ? '' : day(dueOffset), dateShipped: isOpen ? (rnd() < 0.1 ? day(0) : '') : day(-age + Math.floor(rnd() * 5)),
+    nb: rnd() < 0.8 ? (() => { const d = day(dueOffset + Math.floor(rnd() * 3)); return `${d.slice(5, 7)}/${d.slice(8, 10)}/${d.slice(2, 4)}`; })() : '',
     subtotal: rnd() < 0.3 ? 0.0001 : Math.round(rnd() * 2500 * 100) / 100, itemStatus: pick([0, 2, 3, 4, 5, 17]),
   };
 }
@@ -47,7 +48,7 @@ ${j.dateDue ? `\t\t\t<DateDue>${j.dateDue}</DateDue>\n` : ''}${j.dateShipped ? `
 \t\t\t<Subtotal>${j.subtotal}</Subtotal>
 \t\t\t<Balance>0.0000</Balance>
 \t\t\t<WOrderPrinted>1</WOrderPrinted>
-\t\t\t<WOrderNote>Test note for ${j.jobNo}
+\t\t\t<WOrderNote>${j.nb ? 'NB ' + j.nb + '\n' : ''}Test note for ${j.jobNo}
 Ship by Standard Shipping</WOrderNote>
 \t\t</JOB_1>
 \t</JOB_1>
