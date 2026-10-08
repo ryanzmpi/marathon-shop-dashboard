@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Shop Dashboard</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/app.css">
+</head>
+<body>
+<header class="top">
+  <div>
+    <h1>Marathon Printing · Shop Dashboard</h1>
+    <div class="sub" id="today">&nbsp;</div>
+  </div>
+  <span id="scan"></span>
+  <div class="spacer"></div>
+  <nav class="links"><a href="/tv">TV mode</a><a href="/logout">Log out</a></nav>
+</header>
+
+<main>
+  <div id="banner"></div>
+
+  <section class="kpis" id="kpis" aria-label="Key numbers"></section>
+
+  <div class="grid-2">
+    <section class="card">
+      <h2>Upcoming workload</h2>
+      <p class="hint">Open jobs by due date · next 14 days (weekends faded)</p>
+      <div id="workload"></div>
+    </section>
+    <section class="card">
+      <h2>Jobs by stage</h2>
+      <p class="hint">
+        Group by
+        <select id="stageMode" aria-label="Group stages by">
+          <option value="job">Job status</option>
+          <option value="item">Main item status</option>
+        </select>
+        · click a bar to filter
+      </p>
+      <div id="stages"></div>
+    </section>
+  </div>
+
+  <section class="card">
+    <h2>Shipped &amp; invoiced</h2>
+    <p class="hint" id="salesHint">Job subtotal by date shipped · last 30 days</p>
+    <div id="sales"></div>
+  </section>
+
+  <section class="card">
+    <div class="filters">
+      <input type="search" id="q" placeholder="Search job #, customer, title, PO…" aria-label="Search jobs">
+      <div class="chips" id="chips" role="group" aria-label="Due filter"></div>
+      <select id="fStage" aria-label="Stage"></select>
+      <select id="fCsr" aria-label="CSR"></select>
+      <select id="fRep" aria-label="Salesperson"></select>
+      <span class="count-note" id="countNote"></span>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr id="thead"></tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+  </section>
+</main>
+
+<script src="/common.js"></script>
+<script src="/office.js"></script>
+</body>
+</html>

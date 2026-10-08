@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Shop Floor</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/app.css">
+<style>
+  html, body { height: 100%; overflow: hidden; }
+  body { font-size: clamp(14px, 1.05vw, 26px); }
+  .tv { height: 100vh; display: grid; grid-template-rows: auto auto 1fr auto; gap: 1.2vh; padding: 1.6vh 1.6vw; }
+  .tv-head { display: flex; align-items: baseline; gap: 1.5vw; }
+  .tv-head h1 { font-size: 1.7em; margin: 0; font-weight: 700; letter-spacing: -0.02em; }
+  .tv-head .date { color: var(--text-2); font-size: 1.3em; }
+  .tv-head .spacer { flex: 1; }
+  .tv-head .clock { font-size: 2em; font-weight: 650; font-variant-numeric: tabular-nums; }
+  .tv-kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1vw; }
+  .tv-kpi { background: var(--surface); border-radius: 12px; padding: 1.2vh 1.2vw; border-left: 0.5vw solid var(--border); }
+  .tv-kpi.critical { border-left-color: var(--critical); }
+  .tv-kpi.warning { border-left-color: var(--warning); }
+  .tv-kpi .l { color: var(--text-2); font-size: 1.05em; display: flex; gap: .4em; align-items: center; }
+  .tv-kpi .l .icon { width: 1em; height: 1em; }
+  .tv-kpi .v { font-size: 3.4em; font-weight: 700; line-height: 1.05; font-variant-numeric: tabular-nums; }
+  .tv-kpi.critical .v { color: var(--critical-ink); }
+  .tv-kpi.warning .v { color: var(--warning); }
+  .tv-cols { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1vw; min-height: 0; }
+  .tv-col { background: var(--surface); border-radius: 12px; display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+  .tv-col h2 { margin: 0; padding: 1.2vh 1.2vw; font-size: 1.25em; display: flex; align-items: center; gap: .5em; border-bottom: 1px solid var(--border); }
+  .tv-col h2 .n { margin-left: auto; color: var(--text-2); font-variant-numeric: tabular-nums; }
+  .tv-col h2 .icon { width: 1em; height: 1em; }
+  .tv-col.late h2 { color: var(--critical-ink); }
+  .tv-col.today h2 { color: var(--warning); }
+  .viewport { flex: 1; overflow: hidden; position: relative; }
+  .list { transition: transform 1s ease; }
+  .tv-job { display: grid; grid-template-columns: auto 1fr; gap: .1em 1em; padding: 1vh 1.2vw; border-bottom: 1px solid var(--border); }
+  .tv-job .no { font-size: 1.35em; font-weight: 700; font-variant-numeric: tabular-nums; grid-row: span 2; }
+  .tv-job .t { font-size: 1.15em; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tv-job .m { color: var(--text-2); display: flex; gap: .8em; align-items: center; white-space: nowrap; overflow: hidden; }
+  .tv-job .m .stage { font-size: .9em; }
+  .tv-job .lateby { color: var(--critical-ink); font-weight: 650; }
+  .empty { color: var(--muted); padding: 2vh 1.2vw; font-size: 1.1em; }
+  .page-dots { text-align: center; color: var(--muted); font-size: .85em; padding: .4vh 0; min-height: 1.6em; }
+  .tv-stages { display: flex; gap: .8vw; overflow: hidden; }
+  .tv-stage { background: var(--surface); border-radius: 10px; padding: .8vh 1vw; min-width: 8vw; flex: 1; }
+  .tv-stage .l { color: var(--text-2); font-size: .95em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tv-stage .v { font-size: 2em; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .tv-head .scan-pill { font-size: .75em; }
+  .tv-foot { display: flex; justify-content: space-between; color: var(--muted); font-size: .85em; }
+</style>
+</head>
+<body>
+<div class="tv">
+  <div class="tv-head">
+    <h1>Shop Floor</h1>
+    <span class="date" id="date"></span>
+    <span id="scan"></span>
+    <span class="spacer"></span>
+    <span class="clock" id="clock"></span>
+  </div>
+  <div class="tv-kpis" id="kpis"></div>
+  <div class="tv-cols" id="cols"></div>
+  <div>
+    <div class="tv-stages" id="stages"></div>
+  </div>
+</div>
+<script src="/common.js"></script>
+<script src="/tv.js"></script>
+</body>
+</html>

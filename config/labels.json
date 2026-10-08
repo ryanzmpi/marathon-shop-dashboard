@@ -1,0 +1,11 @@
+{
+  "_help": "Fill in names for Printer's Plan codes. Anything left out shows as its number (e.g. 'Status 3'). You can also paste this whole JSON into the LABELS_JSON variable in Railway instead of editing this file.",
+  "jobStatus": {},
+  "itemStatus": {},
+  "csr": {},
+  "salesRep": {},
+  "employee": {},
+  "service": {},
+  "stageOrder": [],
+  "hiddenJobStatuses": []
+}

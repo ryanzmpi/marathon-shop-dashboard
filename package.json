@@ -1,0 +1,12 @@
+{
+  "name": "marathon-shop-dashboard",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Shop dashboard for Marathon Printing, fed by the Printer's Plan Web2Plan listener",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "mock": "node test/mock-listener.js"
+  },
+  "engines": { "node": ">=20" }
+}
