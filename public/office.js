@@ -41,18 +41,21 @@
   }
 
   // ---------------- workload chart ----------------
+  // Late + the next 5 business days (today counts if it's a weekday). Jobs due on a
+  // Saturday or Sunday are counted on the following Monday.
   function renderWorkload(open, today) {
     const cols = [{ key: 'late', label: 'Late<br>&nbsp;', jobs: open.filter((j) => M.bucket(j, today) === 'late'), critical: true }];
-    for (let i = 0; i < 14; i++) {
-      const d = M.addDays(today, i);
-      cols.push({ key: d, label: i === 0 ? 'Today<br>' + M.fmtShort(d) : M.fmtDay(d).replace(' ', '<br>'), jobs: open.filter((j) => j.dateDue === d), weekend: M.isWeekend(d), strong: i === 0 });
+    let d = M.isWeekend(today) ? M.nextWorkday(today) : today;
+    for (let i = 0; i < 5; i++, d = M.nextWorkday(d)) {
+      const day = d;
+      cols.push({ key: day, label: (day === today ? 'Today' : M.fmtDay(day).split(' ')[0]) + '<br>' + M.fmtShort(day), jobs: open.filter((j) => j.dateDue && j.dateDue >= today && M.workdayOf(j.dateDue) === day), strong: day === today });
     }
     const max = Math.max(1, ...cols.map((c) => c.jobs.length));
     $('workload').innerHTML = `
       <div class="vbars">${cols.map((c, i) => `
         <div class="col" data-i="${i}">
           ${c.jobs.length ? `<div class="val num">${c.jobs.length}</div>` : ''}
-          <div class="bar ${c.critical ? 'critical' : ''} ${c.weekend ? 'weekend' : ''}" style="height:${(c.jobs.length / max) * 85}%"></div>
+          <div class="bar ${c.critical ? 'critical' : ''}" style="height:${(c.jobs.length / max) * 85}%"></div>
           <div class="hit"></div>
         </div>`).join('')}
       </div>
@@ -84,22 +87,26 @@
   }
 
   // ---------------- sales chart ----------------
+  // The last 10 business days, ending today (or the last weekday if today is a weekend).
+  // Anything shipped on a Saturday or Sunday is counted on the Friday before.
   function renderSales(inv, today, scan) {
-    const cols = [];
-    for (let i = 29; i >= 0; i--) {
-      const d = M.addDays(today, -i);
-      const jobs = inv.filter((j) => j.dateShipped === d);
-      cols.push({ d, jobs, amt: jobs.reduce((s, j) => s + (j.subtotal || 0), 0) });
-    }
+    const days = [];
+    let d = M.isWeekend(today) ? M.prevWorkday(today) : today;
+    for (let i = 0; i < 10; i++, d = M.prevWorkday(d)) days.unshift(d);
+    const cols = days.map((day) => {
+      const jobs = inv.filter((j) => j.dateShipped && M.workdayBefore(j.dateShipped) === day);
+      return { d: day, jobs, amt: jobs.reduce((s, j) => s + (j.subtotal || 0), 0) };
+    });
     const max = Math.max(1, ...cols.map((c) => c.amt));
     $('sales').innerHTML = `
-      <div class="vbars" style="height:140px">${cols.map((c, i) => `
+      <div class="vbars" style="height:160px">${cols.map((c, i) => `
         <div class="col" data-i="${i}">
-          <div class="bar ${M.isWeekend(c.d) ? 'weekend' : ''}" style="height:${(c.amt / max) * 92}%"></div>
+          ${c.amt ? `<div class="val num">${M.moneyK(c.amt)}</div>` : ''}
+          <div class="bar" style="height:${(c.amt / max) * 82}%"></div>
           <div class="hit"></div>
         </div>`).join('')}
       </div>
-      <div class="vlabels">${cols.map((c, i) => `<span>${i % 5 === 4 || i === 29 ? M.fmtShort(c.d) : ''}</span>`).join('')}</div>`;
+      <div class="vlabels">${cols.map((c) => `<span class="${c.d === today ? 'strong' : ''}">${c.d === today ? 'Today' : M.fmtDay(c.d).split(' ')[0]}<br>${M.fmtShort(c.d)}</span>`).join('')}</div>`;
     $('sales').querySelectorAll('.col').forEach((el) => {
       const c = cols[+el.dataset.i];
       const html = `<b>${M.fmtLong(c.d)}</b><br>${M.money(c.amt).replace('—', '$0')} · ${c.jobs.length} job${c.jobs.length === 1 ? '' : 's'}`;
@@ -107,7 +114,7 @@
       el.addEventListener('mouseleave', (e) => M.tip(e, null));
     });
     const bf = scan.backfill;
-    $('salesHint').textContent = 'Job subtotal by date shipped · last 30 days (weekends faded)' + (bf && !bf.done ? ' · still loading history, totals will fill in' : '');
+    $('salesHint').textContent = 'Job subtotal by date shipped · last 10 business days' + (bf && !bf.done ? ' · still loading history, totals will fill in' : '');
   }
 
   // ---------------- table ----------------
@@ -135,7 +142,7 @@
     const q = f.q.trim().toLowerCase();
     let rows = open.filter((j) =>
       (f.bucket === 'all' || M.bucket(j, today) === f.bucket) &&
-      (!f.date || j.dateDue === f.date) &&
+      (!f.date || (j.dateDue && M.workdayOf(j.dateDue) === f.date)) &&
       (!f.stage || stageOf(j) === f.stage) &&
       (!f.csr || M.person('csr', j.csrNo) === f.csr) &&
       (!q || [j.jobNo, j.title, j.customer, j.po, j.buyer, j.shipTo].join(' ').toLowerCase().includes(q)));

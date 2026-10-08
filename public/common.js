@@ -8,6 +8,10 @@ const MSD = (() => {
   const diffDays = (a, b) => Math.round((parse(a) - parse(b)) / DAY);
   const isWeekend = (d) => dow(d) === 0 || dow(d) === 6;
   function nextWorkday(d) { let x = addDays(d, 1); while (isWeekend(x)) x = addDays(x, 1); return x; }
+  function prevWorkday(d) { let x = addDays(d, -1); while (isWeekend(x)) x = addDays(x, -1); return x; }
+  // A weekend date counted on the next weekday (due dates) or the weekday before (ship dates).
+  const workdayOf = (d) => (isWeekend(d) ? nextWorkday(d) : d);
+  const workdayBefore = (d) => (isWeekend(d) ? prevWorkday(d) : d);
   function weekStart(d) { const w = dow(d); return addDays(d, w === 0 ? -6 : 1 - w); } // Monday
 
   const WD = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -148,5 +152,5 @@ const MSD = (() => {
     tipEl.style.left = x + 'px'; tipEl.style.top = y + 'px';
   }
 
-  return { needBy, needByText, cmpNeedBy, cmpDueThenNB, isReprint, REPRINT_BADGE, parse, addDays, diffDays, isWeekend, nextWorkday, weekStart, fmtShort, fmtDay, fmtLong, money, moneyK, esc, lab, jobStage, itemStage, mainLine, person, bucket, BUCKET_NAMES, ICONS, dueBadge, load, stageList, scanPill, tip };
+  return { prevWorkday, workdayOf, workdayBefore, needBy, needByText, cmpNeedBy, cmpDueThenNB, isReprint, REPRINT_BADGE, parse, addDays, diffDays, isWeekend, nextWorkday, weekStart, fmtShort, fmtDay, fmtLong, money, moneyK, esc, lab, jobStage, itemStage, mainLine, person, bucket, BUCKET_NAMES, ICONS, dueBadge, load, stageList, scanPill, tip };
 })();
