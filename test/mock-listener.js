@@ -24,7 +24,7 @@ for (let n = NEWEST - 2200; n <= NEWEST; n++) {
   jobs[n] = {
     jobNo: n, type: isOpen ? 0 : 3, title: pick(PRODUCTS) + (rnd() < 0.3 ? ' - REPRINT' : ''), customer: pick(CUSTOMERS),
     status: isOpen ? pick([0, 0, 0, 1, 2, 5]) : 0, csr: pick([101, 102, 103]), rep: pick([200, 201, 203]),
-    dateIn: day(-age), dateDue: rnd() < 0.04 ? '' : day(dueOffset), dateShipped: isOpen ? '' : day(-age + Math.floor(rnd() * 5)),
+    dateIn: day(-age), dateDue: rnd() < 0.04 ? '' : day(dueOffset), dateShipped: isOpen ? (rnd() < 0.1 ? day(0) : '') : day(-age + Math.floor(rnd() * 5)),
     subtotal: rnd() < 0.3 ? 0.0001 : Math.round(rnd() * 2500 * 100) / 100, itemStatus: pick([0, 2, 3, 4, 5, 17]),
   };
 }

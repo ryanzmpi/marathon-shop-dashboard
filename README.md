@@ -3,7 +3,7 @@
 A web dashboard showing open jobs from Printer's Plan. It reads job data from the Web2Plan listener (`Listener.aspx`) at `marathonprinting.pagepath.com`.
 
 - **Office view** (`/`): late, due today and upcoming counts; a workload chart; jobs by stage; shipped totals; and a searchable, sortable job table. Click any row to see its line items and work-order note.
-- **TV view** (`/tv`): a full-screen display for the shop floor showing Late, Due today and Due next workday. It refreshes every minute and pages through long lists on its own.
+- **TV view** (`/tv`): a full-screen display for the shop floor (works on vertical and horizontal screens) showing Late, Due today and Due next workday. It refreshes every minute and pages through long lists on its own.
 
 It only makes **read-only GET requests** to `Listener.aspx`. It never calls `XmlListener.aspx`, which creates orders.
 
@@ -12,8 +12,9 @@ It only makes **read-only GET requests** to `Listener.aspx`. It never calls `Xml
 The listener has no "list all open jobs" command, so the service walks job numbers:
 
 1. **First run (backfill):** checks the last `BACKFILL_COUNT` job numbers (default 5,000) for jobs that are still open. It also records recently invoiced jobs so the shipped totals have history. At about 0.8 s per request with 4 in parallel, this takes roughly 15–25 minutes. The dashboard works during the backfill and shows a progress banner.
-2. **Every `REFRESH_SECONDS` (default 120):** re-checks every known open job, then probes upward from the newest job number to pick up new ones.
-3. When a job stops showing as open, the service looks it up in History and counts it as shipped/invoiced. It uses the job's subtotal and `DateShipped`.
+2. **Every `REFRESH_SECONDS` (default 60):** re-checks every known open job, then probes upward from the newest job number to pick up new ones.
+3. **Shipped jobs drop off right away:** as soon as a ship date is entered on a job in Printer's Plan, it leaves the open list and counts toward the shipped totals, even before it's invoiced.
+4. When a job stops showing as open, the service looks it up in History and counts it as shipped/invoiced. It uses the job's subtotal and `DateShipped`.
 
 Results are cached in `DATA_DIR/state.json`, so a restart doesn't trigger a full re-scan, as long as a volume is attached. If the listener can't be reached, existing jobs are kept and the status pill turns red.
 
@@ -42,7 +43,7 @@ Railway detects Node and runs `npm start` automatically. The health check is at 
 | Variable | Default | What it does |
 |---|---|---|
 | `LISTENER_URL` | `https://marathonprinting.pagepath.com/planweb/Listener.aspx` | Listener address |
-| `REFRESH_SECONDS` | `120` | How often open jobs are re-checked |
+| `REFRESH_SECONDS` | `60` | How often open jobs are re-checked |
 | `MAX_CONCURRENCY` | `4` | Requests in flight to Printer's Plan at once (keep this low) |
 | `BACKFILL_COUNT` | `5000` | How many job numbers back to look for older open jobs |
 | `HISTORY_SEED_COUNT` | `1500` | How far back the first run records invoiced jobs |

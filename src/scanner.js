@@ -200,9 +200,14 @@ function start() {
 
 function snapshot() {
   const bf = state.backfill;
+  // A job drops off the open list as soon as a ship date is entered in Printer's Plan,
+  // even before it's invoiced. Those jobs count toward the "shipped" totals instead.
+  const all = Object.values(state.open);
+  const shipped = { ...state.invoiced };
+  for (const j of all) if (j.dateShipped) shipped[j.jobNo] = slimInvoiced(j);
   return {
-    open: Object.values(state.open),
-    invoiced: Object.values(state.invoiced),
+    open: all.filter((j) => !j.dateShipped),
+    invoiced: Object.values(shipped),
     scan: {
       phase: state.phase,
       newestJobNo: state.maxJobNo,

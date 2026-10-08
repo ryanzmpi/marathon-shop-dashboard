@@ -2,7 +2,7 @@
   "_help": "Fill in names for Printer's Plan codes. Anything left out shows as its number (e.g. 'Status 3'). You can also paste this whole JSON into the LABELS_JSON variable in Railway instead of editing this file.",
   "jobStatus": {},
   "itemStatus": {},
-  "csr": {},
+  "csr": { "101": "Shawn", "102": "Connor", "103": "Anthony", "104": "Ryan", "105": "Jen" },
   "salesRep": {},
   "employee": {},
   "service": {},

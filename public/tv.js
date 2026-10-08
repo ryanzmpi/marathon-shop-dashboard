@@ -18,6 +18,7 @@
       <div class="m">
         ${lateBy ? `<span class="lateby">${lateBy}d late</span>` : ''}
         <span>${M.esc(j.customer || '')}</span>
+        ${j.csrNo ? `<span>${M.esc(M.person('csr', j.csrNo))}</span>` : ''}
         <span class="stage">${M.esc(stageOf(j))}</span>
       </div>
     </div>`;
@@ -38,7 +39,7 @@
       ['critical', M.ICONS.late, 'Late', late.length],
       ['warning', M.ICONS.today, 'Due today', due.length],
       ['', '', 'Due ' + M.fmtDay(nw), next.length],
-      ['', '', 'Open jobs · ' + week + ' due this week', open.length],
+      ['', '', 'Open jobs', open.length],
     ].map(([c, i, l, v]) => `<div class="tv-kpi ${c}"><div class="l">${i}${l}</div><div class="v">${v}</div></div>`).join('');
 
     const cols = [
@@ -52,10 +53,13 @@
         <div class="viewport"><div class="list">${c.jobs.length ? c.jobs.map((j) => jobRow(j, today, c.late)).join('') : '<div class="empty">Nothing here ✓</div>'}</div></div>
         <div class="page-dots"></div>
       </section>`).join('');
-    applyOffsets();
-
+    // Portrait screens stack the lists; give busier lists more of the height.
+    document.querySelectorAll('.tv-col').forEach((el, i) => {
+      el.style.flexGrow = String(Math.max(1.5, Math.min(cols[i].jobs.length, 10)));
+    });
     const stages = M.stageList(open, stageOf);
     $('stages').innerHTML = stages.map(([name, n]) => `<div class="tv-stage"><div class="l">${M.esc(name)}</div><div class="v">${n}</div></div>`).join('');
+    applyOffsets(); // after everything is drawn, so list heights are final
   }
 
   // Page through columns whose list is taller than the screen.
@@ -72,6 +76,8 @@
       if (off > list.scrollHeight - 10) off = 0;
       offsets[k] = off;
       list.style.transform = `translateY(${-off}px)`;
+      // Hide rows that would be cut off at the bottom (they show on the next page).
+      rows.forEach((r) => { r.style.visibility = r.offsetTop + r.offsetHeight > off + h + 1 ? 'hidden' : ''; });
       const first = rows.findIndex((r) => r.offsetTop >= off);
       const visible = rows.filter((r) => r.offsetTop >= off && r.offsetTop + r.offsetHeight <= off + h).length;
       col.querySelector('.page-dots').textContent = list.scrollHeight > h && rows.length ? `${first + 1}–${first + visible} of ${rows.length}` : '';

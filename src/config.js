@@ -26,7 +26,7 @@ module.exports = {
   dataDir: process.env.DATA_DIR || path.join(__dirname, '..', 'data'),
 
   // Scanning behaviour.
-  refreshSeconds: num(process.env.REFRESH_SECONDS, 120), // how often open jobs are re-checked
+  refreshSeconds: num(process.env.REFRESH_SECONDS, 60), // how often open jobs are re-checked
   maxConcurrency: num(process.env.MAX_CONCURRENCY, 4), // simultaneous requests to the listener
   requestTimeoutMs: num(process.env.REQUEST_TIMEOUT_MS, 20000),
   startJobNo: num(process.env.START_JOBNO, 0), // optional: a recent job number to start from
