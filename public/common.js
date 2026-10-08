@@ -32,6 +32,15 @@ const MSD = (() => {
   const jobStage = (j) => lab('jobStatus', j.status, 'Status');
   const mainLine = (j) => (j.items || []).find((i) => i.serNo === 0) || null;
   const itemStage = (j) => { const m = mainLine(j); return m ? lab('itemStatus', m.status, 'Item status') : '—'; };
+  // A job's stage = the LOWEST status among its product lines (service/operation lines are ignored),
+  // so a job with lines at 2 and 5 shows as 2 until every line has moved on.
+  // Any statuses listed in labels.ignoreItemStatuses are skipped (none by default).
+  const ignored = (code) => (L.ignoreItemStatuses || []).map(Number).includes(code);
+  const stageCode = (j) => {
+    const codes = (j.items || []).filter((i) => i.serNo === 0 && !ignored(i.status)).map((i) => i.status);
+    return codes.length ? Math.min(...codes) : null;
+  };
+  const stage = (j) => { const c = stageCode(j); return c === null ? '' : lab('itemStatus', c, 'Status'); };
   const person = (group, code) => (code ? lab(group, code, '#') : '—');
 
   // ----- classify an open job relative to today -----
@@ -120,15 +129,21 @@ const MSD = (() => {
     return data;
   }
 
-  // Ordered list of stages present in the data, honouring labels.stageOrder when given.
-  function stageList(jobs, keyFn) {
-    const counts = new Map();
-    for (const j of jobs) counts.set(keyFn(j), (counts.get(keyFn(j)) || 0) + 1);
+  // Stages present in the data as [name, count, code], in labels.stageOrder order if given,
+  // otherwise by status number.
+  function stageList(jobs) {
+    const by = new Map();
+    for (const j of jobs) {
+      const name = stage(j), code = stageCode(j);
+      if (!name) continue; // nothing to show (e.g. only status-13 lines)
+      const e = by.get(name) || { n: 0, code };
+      e.n++; e.code = Math.min(e.code, code); by.set(name, e);
+    }
     const order = (L.stageOrder || []).map(String);
-    return [...counts.entries()].sort((a, b) => {
+    return [...by.entries()].map(([name, e]) => [name, e.n, e.code]).sort((a, b) => {
       const ia = order.indexOf(a[0]), ib = order.indexOf(b[0]);
       if (ia !== -1 || ib !== -1) return (ia === -1 ? 999 : ia) - (ib === -1 ? 999 : ib);
-      return a[0].localeCompare(b[0], undefined, { numeric: true });
+      return (a[2] ?? 999) - (b[2] ?? 999);
     });
   }
 
@@ -155,5 +170,5 @@ const MSD = (() => {
     tipEl.style.left = x + 'px'; tipEl.style.top = y + 'px';
   }
 
-  return { amount, prevWorkday, workdayOf, workdayBefore, needBy, needByText, cmpNeedBy, cmpDueThenNB, isReprint, REPRINT_BADGE, parse, addDays, diffDays, isWeekend, nextWorkday, weekStart, fmtShort, fmtDay, fmtLong, money, moneyK, esc, lab, jobStage, itemStage, mainLine, person, bucket, BUCKET_NAMES, ICONS, dueBadge, load, stageList, scanPill, tip };
+  return { ignored, stage, stageCode, amount, prevWorkday, workdayOf, workdayBefore, needBy, needByText, cmpNeedBy, cmpDueThenNB, isReprint, REPRINT_BADGE, parse, addDays, diffDays, isWeekend, nextWorkday, weekStart, fmtShort, fmtDay, fmtLong, money, moneyK, esc, lab, jobStage, itemStage, mainLine, person, bucket, BUCKET_NAMES, ICONS, dueBadge, load, stageList, scanPill, tip };
 })();

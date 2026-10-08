@@ -71,7 +71,7 @@ Until names are filled in, everything shows as a number ("Status 2", "#102"). Ad
 
 - `stageOrder` controls the order of stages on both views.
 - Any job status listed in `hiddenJobStatuses` (for example, "On hold") is left off the dashboard.
-- The stage chart can group by the job's status or by the main line item's status (the dropdown in the office view). On the TV, add `?stage=item` to the URL to group by item status there too.
+- A job's **stage** is the lowest status among its product lines (service/operation lines are ignored). Name those codes under `itemStatus`. `jobStatus` is no longer used.
 
 ## Run locally
 

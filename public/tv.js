@@ -1,7 +1,7 @@
 (() => {
   const M = MSD, $ = (id) => document.getElementById(id);
   const params = new URLSearchParams(location.search);
-  const stageOf = params.get('stage') === 'item' ? M.itemStage : M.jobStage;
+  const stageOf = M.stage; // lowest product-line status on the job
   const PAGE_SECONDS = Number(params.get('page')) || 12;
   let data = null;
   const offsets = {}; // column key -> scroll offset in px
@@ -21,7 +21,7 @@
         ${lateBy ? `<span class="lateby">${lateBy}d late</span>` : ''}
         <span>${M.esc(j.customer || '')}</span>
         ${j.csrNo ? `<span>${M.esc(M.person('csr', j.csrNo))}</span>` : ''}
-        <span class="stage">${M.esc(stageOf(j))}</span>
+        ${stageOf(j) ? `<span class="stage">${M.esc(stageOf(j))}</span>` : ''}
       </div>
     </div>`;
   }
@@ -65,7 +65,7 @@
       el.classList.toggle('empty-col', empty);
       el.style.flexGrow = empty ? '0' : String(WEIGHT[cols[i].key]);
     });
-    const stages = M.stageList(open, stageOf);
+    const stages = M.stageList(open);
     $('stages').innerHTML = stages.map(([name, n]) => `<div class="tv-stage"><div class="l">${M.esc(name)}</div><div class="v">${n}</div></div>`).join('');
     applyOffsets(); // after everything is drawn, so list heights are final
   }

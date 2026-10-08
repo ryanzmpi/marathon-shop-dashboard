@@ -6,10 +6,8 @@
   const f = { q: '', bucket: 'all', stage: '', csr: '', date: '' };
   let sort = { key: 'due', dir: 1 };
   const expanded = new Set();
-  let stageMode = store.get('msd.stageMode', 'job');
-  $('stageMode').value = stageMode;
 
-  const stageOf = (j) => (stageMode === 'item' ? M.itemStage(j) : M.jobStage(j));
+  const stageOf = M.stage; // lowest product-line status on the job
 
   // ---------------- KPIs ----------------
   function renderKpis(open, inv, today) {
@@ -75,7 +73,7 @@
 
   // ---------------- stages ----------------
   function renderStages(open) {
-    const list = M.stageList(open, stageOf);
+    const list = M.stageList(open);
     const max = Math.max(1, ...list.map((s) => s[1]));
     $('stages').innerHTML = list.length ? `<div class="hbars">${list.map(([name, n]) => `
       <div class="row" data-stage="${M.esc(name)}" title="Show ${M.esc(name)}">
@@ -123,7 +121,7 @@
     { key: 'due', label: 'Due', val: (j) => j.dateDue || '9999' },
     { key: 'nb', label: 'Need by', val: (j) => M.needBy(j) || '' },
     { key: 'title', label: 'Customer / title', val: (j) => (j.customer || '').toLowerCase() },
-    { key: 'stage', label: 'Stage', val: (j) => stageOf(j) },
+    { key: 'stage', label: 'Stage', val: (j) => M.stageCode(j) ?? 999 },
     { key: 'csr', label: 'CSR', val: (j) => M.person('csr', j.csrNo) },
     { key: 'amt', label: 'Amount', val: (j) => M.amount(j), right: true },
   ];
@@ -136,7 +134,7 @@
     const chips = [['all', 'All'], ['late', 'Late'], ['today', 'Today'], ['next', 'Next workday'], ['week', 'Next 7 days'], ['nodate', 'No due date']];
     $('chips').innerHTML = chips.map(([k, l]) => `<button class="chip" data-b="${k}" aria-pressed="${f.bucket === k && !f.date}">${l}</button>`).join('')
       + (f.date ? `<button class="chip" data-b="clear-date" aria-pressed="true">Due ${M.fmtDay(f.date)} ✕</button>` : '');
-    fillSelect($('fStage'), 'Stage', M.stageList(open, stageOf).map((s) => s[0]), f.stage);
+    fillSelect($('fStage'), 'Stage', M.stageList(open).map((s) => s[0]), f.stage);
     fillSelect($('fCsr'), 'CSR', [...new Set(open.map((j) => M.person('csr', j.csrNo)))].sort(), f.csr);
 
     const q = f.q.trim().toLowerCase();
@@ -165,7 +163,7 @@
         <td><span class="due ${b === 'late' || b === 'today' ? b : ''}">${M.fmtDay(j.dateDue)}</span> ${M.dueBadge(j, today)}</td>
         <td class="nb-cell">${M.needBy(j) ? `<b>${M.fmtDay(M.needBy(j))}</b>` : `<span class="muted">${M.esc(M.needByText(j)) || '—'}</span>`}</td>
         <td class="title"><div>${rp ? M.REPRINT_BADGE : ''}${M.esc(j.title)}</div><div class="cust">${M.esc(j.customer)}</div></td>
-        <td><span class="stage">${M.esc(stageOf(j))}</span></td>
+        <td>${stageOf(j) ? `<span class="stage">${M.esc(stageOf(j))}</span>` : ''}</td>
         <td>${M.esc(M.person('csr', j.csrNo))}</td>
         <td class="num right">${M.money(M.amount(j))}</td>
       </tr>`;
@@ -176,7 +174,7 @@
   function detail(j) {
     const lines = (j.items || []).map((i) => {
       const what = i.serNo === 0 ? `<b>${M.esc(i.description || 'Item ' + i.itemNo)}</b>${i.qty ? ' · qty ' + i.qty.toLocaleString() : ''}` : `${M.esc(M.lab('service', i.serNo, 'Service'))}${i.empNo ? ' · ' + M.esc(M.person('employee', i.empNo)) : ''}`;
-      return `<div class="item"><span class="k">Line ${i.itemNo}${i.subNo ? '.' + i.subNo : ''}</span><span>${what}</span><span class="stage">${M.esc(M.lab('itemStatus', i.status, 'Status'))}</span></div>`;
+      return `<div class="item"><span class="k">Line ${i.itemNo}${i.subNo ? '.' + i.subNo : ''}</span><span>${what}</span>${i.serNo === 0 && M.ignored(i.status) ? '' : `<span class="stage">${M.esc(M.lab('itemStatus', i.status, 'Status'))}</span>`}</div>`;
     }).join('');
     return `<tr class="detail"><td colspan="7">
       <div style="display:flex;gap:28px;flex-wrap:wrap;font-size:12px;color:var(--text-2)">
@@ -221,7 +219,6 @@
   $('q').addEventListener('input', (e) => { f.q = e.target.value; render(); });
   $('fStage').addEventListener('change', (e) => { f.stage = e.target.value; render(); });
   $('fCsr').addEventListener('change', (e) => { f.csr = e.target.value; render(); });
-  $('stageMode').addEventListener('change', (e) => { stageMode = e.target.value; store.set('msd.stageMode', stageMode); f.stage = ''; render(); });
 
   async function refresh() {
     try { data = await M.load(); render(); }
