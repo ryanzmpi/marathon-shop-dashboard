@@ -111,10 +111,15 @@ async function recheckOpen() {
     try {
       const job = await getJob('Order', jobNo);
       if (job) { state.open[jobNo] = { ...job, seenAt: new Date().toISOString() }; return; }
-      // No longer open: invoiced, deleted or converted.
-      delete state.open[jobNo];
+      // No longer open. Look it up in History *before* removing it, so a failed lookup
+      // never makes a job vanish from both lists.
       const hist = await getJob('History', jobNo);
-      if (hist) recordInvoiced(hist);
+      if (hist) { recordInvoiced(hist); delete state.open[jobNo]; return; }
+      // In neither list (deleted, converted, or mid-invoice in Printer's Plan). Only drop it
+      // after it's been missing for 3 checks in a row, in case it reappears.
+      const prev = state.open[jobNo];
+      prev.missing = (prev.missing || 0) + 1;
+      if (prev.missing >= 3) delete state.open[jobNo];
     } catch {
       /* network problem: keep the job as-is and try again next cycle */
     }
