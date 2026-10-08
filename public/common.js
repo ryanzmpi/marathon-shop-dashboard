@@ -101,6 +101,9 @@ const MSD = (() => {
     return (x < y ? -1 : x > y ? 1 : 0) || cmpNeedBy(a, b) || a.jobNo - b.jobNo;
   }
 
+  // Dollar figures use the job total (incl. discounts, shipping, tax); older cached records fall back to subtotal.
+  const amount = (j) => (j.total ?? j.subtotal ?? 0);
+
   // Any job with "reprint" in its title gets flagged red everywhere.
   const isReprint = (j) => /reprint/i.test(j.title || '');
   const REPRINT_BADGE = '<span class="badge reprint">Reprint</span> ';
@@ -152,5 +155,5 @@ const MSD = (() => {
     tipEl.style.left = x + 'px'; tipEl.style.top = y + 'px';
   }
 
-  return { prevWorkday, workdayOf, workdayBefore, needBy, needByText, cmpNeedBy, cmpDueThenNB, isReprint, REPRINT_BADGE, parse, addDays, diffDays, isWeekend, nextWorkday, weekStart, fmtShort, fmtDay, fmtLong, money, moneyK, esc, lab, jobStage, itemStage, mainLine, person, bucket, BUCKET_NAMES, ICONS, dueBadge, load, stageList, scanPill, tip };
+  return { amount, prevWorkday, workdayOf, workdayBefore, needBy, needByText, cmpNeedBy, cmpDueThenNB, isReprint, REPRINT_BADGE, parse, addDays, diffDays, isWeekend, nextWorkday, weekStart, fmtShort, fmtDay, fmtLong, money, moneyK, esc, lab, jobStage, itemStage, mainLine, person, bucket, BUCKET_NAMES, ICONS, dueBadge, load, stageList, scanPill, tip };
 })();

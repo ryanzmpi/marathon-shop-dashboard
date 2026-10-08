@@ -111,6 +111,11 @@ function parseJob(xml) {
     proofTime: tag(j, 'ProofTime'),
     dateShipped: day(tag(j, 'DateShipped')),
     subtotal: money(tag(j, 'Subtotal')),
+    // Job total as Printer's Plan figures it: subtotal + discount (stored negative) + shipping
+    // + postage + tax + late fee. Matches Balance - Paid - Writeoff on every job checked.
+    total: money(['Subtotal', 'Discount', 'Shipping', 'Postage', 'Tax', 'Tax2', 'Latefee'].reduce((t, k) => t + n(tag(j, k)), 0).toFixed(2)),
+    discount: n(tag(j, 'Discount')),
+    shipping: n(tag(j, 'Shipping')) + n(tag(j, 'Postage')),
     cost: money(tag(j, 'Cost')),
     balance: money(tag(j, 'Balance')),
     workOrderPrinted: tag(j, 'WOrderPrinted') === '1',

@@ -59,7 +59,7 @@ function daysAgo(d) {
 function slimInvoiced(job) {
   return {
     jobNo: job.jobNo, title: job.title, customer: job.customer, csrNo: job.csrNo, repNo: job.repNo,
-    dateIn: job.dateIn, dateDue: job.dateDue, dateShipped: job.dateShipped, subtotal: job.subtotal,
+    dateIn: job.dateIn, dateDue: job.dateDue, dateShipped: job.dateShipped, subtotal: job.subtotal, total: job.total,
   };
 }
 function recordInvoiced(job) {
@@ -121,6 +121,18 @@ async function recheckOpen() {
   }));
 }
 
+// Shipped jobs saved before the dashboard tracked full totals: re-fetch a batch each cycle.
+async function upgradeInvoiced() {
+  const stale = Object.values(state.invoiced).filter((v) => v.total === undefined).slice(0, 60);
+  await Promise.all(stale.map(async (v) => {
+    try {
+      const hist = await getJob('History', v.jobNo);
+      if (hist) state.invoiced[v.jobNo] = slimInvoiced(hist);
+      else state.invoiced[v.jobNo] = { ...v, total: v.subtotal };
+    } catch { /* try again next cycle */ }
+  }));
+}
+
 function pruneInvoiced() {
   for (const [k, v] of Object.entries(state.invoiced)) {
     if (daysAgo(v.dateShipped || v.dateIn) > cfg.invoicedKeepDays) delete state.invoiced[k];
@@ -178,6 +190,7 @@ async function cycle() {
     await findNewJobs();
     state.phase = 'refreshing open jobs';
     await recheckOpen();
+    await upgradeInvoiced();
     pruneInvoiced();
     state.cycles++;
     state.lastCycleAt = new Date().toISOString();

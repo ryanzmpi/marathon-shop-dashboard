@@ -21,7 +21,7 @@
     const newToday = all.filter((j) => j.dateIn === today).length;
     const shippedWeek = inv.filter((j) => j.dateShipped && j.dateShipped >= wk);
     const shippedMonth = inv.filter((j) => j.dateShipped && j.dateShipped >= mo);
-    const sum = (a) => a.reduce((s, j) => s + (j.subtotal || 0), 0);
+    const sum = (a) => a.reduce((s, j) => s + M.amount(j), 0);
     const tiles = [
       { b: 'late', cls: 'critical', icon: M.ICONS.late, label: 'Late', value: by('late'), foot: 'past due date' },
       { b: 'today', cls: 'warning', icon: M.ICONS.today, label: 'Due today', value: by('today'), foot: M.fmtLong(today) },
@@ -62,7 +62,7 @@
       <div class="vlabels">${cols.map((c) => `<span class="${c.strong || c.critical ? 'strong' : ''}">${c.label}</span>`).join('')}</div>`; // labels are trusted (built from dates)
     $('workload').querySelectorAll('.col').forEach((el) => {
       const c = cols[+el.dataset.i];
-      const amt = c.jobs.reduce((s, j) => s + (j.subtotal || 0), 0);
+      const amt = c.jobs.reduce((s, j) => s + M.amount(j), 0);
       const html = `<b>${c.key === 'late' ? 'Late' : M.fmtLong(c.key)}</b><br>${c.jobs.length} job${c.jobs.length === 1 ? '' : 's'}${amt ? ' · ' + M.money(amt) : ''}<br><span style="opacity:.7">Click to list</span>`;
       el.addEventListener('mousemove', (e) => M.tip(e, html));
       el.addEventListener('mouseleave', (e) => M.tip(e, null));
@@ -95,11 +95,11 @@
     for (let i = 0; i < 10; i++, d = M.prevWorkday(d)) days.unshift(d);
     const cols = days.map((day) => {
       const jobs = inv.filter((j) => j.dateShipped && M.workdayBefore(j.dateShipped) === day);
-      return { d: day, jobs, amt: jobs.reduce((s, j) => s + (j.subtotal || 0), 0) };
+      return { d: day, jobs, amt: jobs.reduce((s, j) => s + M.amount(j), 0) };
     });
     const max = Math.max(1, ...cols.map((c) => c.amt));
     $('sales').innerHTML = `
-      <div class="vbars" style="height:160px">${cols.map((c, i) => `
+      <div class="vbars" style="height:110px">${cols.map((c, i) => `
         <div class="col" data-i="${i}">
           ${c.amt ? `<div class="val num">${M.moneyK(c.amt)}</div>` : ''}
           <div class="bar" style="height:${(c.amt / max) * 82}%"></div>
@@ -114,7 +114,7 @@
       el.addEventListener('mouseleave', (e) => M.tip(e, null));
     });
     const bf = scan.backfill;
-    $('salesHint').textContent = 'Job subtotal by date shipped · last 10 business days' + (bf && !bf.done ? ' · still loading history, totals will fill in' : '');
+    $('salesHint').textContent = 'Job total by date shipped · last 10 business days' + (bf && !bf.done ? ' · still loading history, totals will fill in' : '');
   }
 
   // ---------------- table ----------------
@@ -125,7 +125,7 @@
     { key: 'title', label: 'Customer / title', val: (j) => (j.customer || '').toLowerCase() },
     { key: 'stage', label: 'Stage', val: (j) => stageOf(j) },
     { key: 'csr', label: 'CSR', val: (j) => M.person('csr', j.csrNo) },
-    { key: 'amt', label: 'Amount', val: (j) => j.subtotal || 0, right: true },
+    { key: 'amt', label: 'Amount', val: (j) => M.amount(j), right: true },
   ];
 
   function fillSelect(el, label, values, current) {
@@ -167,7 +167,7 @@
         <td class="title"><div>${rp ? M.REPRINT_BADGE : ''}${M.esc(j.title)}</div><div class="cust">${M.esc(j.customer)}</div></td>
         <td><span class="stage">${M.esc(stageOf(j))}</span></td>
         <td>${M.esc(M.person('csr', j.csrNo))}</td>
-        <td class="num right">${M.money(j.subtotal)}</td>
+        <td class="num right">${M.money(M.amount(j))}</td>
       </tr>`;
       return tr + (expanded.has(j.jobNo) ? detail(j) : '');
     }).join('') || `<tr><td colspan="7" class="hint" style="padding:20px">No jobs match.</td></tr>`;
