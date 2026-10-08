@@ -159,6 +159,7 @@ tr.job.reprint td { background: var(--critical-soft); }
 tr.job.reprint td:first-child { box-shadow: inset 4px 0 0 var(--critical); }
 tr.job.reprint:hover td { background: var(--critical-soft); filter: brightness(0.97); }
 .badge.reprint { background: var(--critical); color: #fff; margin-right: 6px; vertical-align: 1px; }
+.stage.coloured { color: #0b0b0b; font-weight: 600; }
 .stage { display: inline-block; font-size: 13px; padding: 1px 8px; border-radius: 6px; background: var(--surface-2); color: var(--text-2); white-space: nowrap; }
 
 /* ---------- login ---------- */

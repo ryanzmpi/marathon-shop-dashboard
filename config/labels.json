@@ -8,5 +8,6 @@
   "service": {},
   "ignoreItemStatuses": [],
   "stageOrder": ["Not Approved", "Pre Press", "Production", "Wide Format", "Stock", "Misc"],
+  "stageColors": {"Not Approved": "#1BFC06", "Pre Press": "#FFFF00", "Production": "#30C5FF", "Wide Format": "#FF793B", "Stock": "#FA3BF0", "Misc": "#C8C8C8"},
   "hiddenJobStatuses": []
 }

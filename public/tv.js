@@ -21,7 +21,7 @@
         ${lateBy ? `<span class="lateby">${lateBy}d late</span>` : ''}
         <span>${M.esc(j.customer || '')}</span>
         ${j.csrNo ? `<span>${M.esc(M.person('csr', j.csrNo))}</span>` : ''}
-        ${stageOf(j) ? `<span class="stage">${M.esc(stageOf(j))}</span>` : ''}
+        ${M.stageChip(stageOf(j))}
       </div>
     </div>`;
   }
@@ -56,18 +56,40 @@
         <div class="viewport"><div class="list">${c.jobs.length ? c.jobs.map((j) => jobRow(j, today, c.late)).join('') : '<div class="empty">Nothing here ✓</div>'}</div></div>
         <div class="page-dots"></div>
       </section>`).join('');
-    // Portrait screens stack the lists. Fixed shares of the height: Due today gets 3 parts,
-    // the next workday 1 part (75/25), and Late 2 parts when it has jobs. An empty list
-    // shrinks to just its header so the others get the room.
-    const WEIGHT = { late: 2, today: 3, next: 1 };
-    document.querySelectorAll('.tv-col').forEach((el, i) => {
-      const empty = cols[i].jobs.length === 0;
-      el.classList.toggle('empty-col', empty);
-      el.style.flexGrow = empty ? '0' : String(WEIGHT[cols[i].key]);
-    });
+    document.querySelectorAll('.tv-col').forEach((el, i) => el.classList.toggle('empty-col', cols[i].jobs.length === 0));
     const stages = M.stageList(open);
-    $('stages').innerHTML = stages.map(([name, n]) => `<div class="tv-stage"><div class="l">${M.esc(name)}</div><div class="v">${n}</div></div>`).join('');
+    $('stages').innerHTML = stages.map(([name, n]) => `<div class="tv-stage" style="border-left-color:${M.stageColor(name) || 'var(--border)'}"><div class="l">${M.esc(name)}</div><div class="v">${n}</div></div>`).join('');
+    sizeColumns();
     applyOffsets(); // after everything is drawn, so list heights are final
+  }
+
+  // Vertical screens stack the three lists. Each list takes only the height it needs, up to
+  // its share: Due today 3 parts, next workday 1 part (75/25), Late 2 parts. Space a list
+  // doesn't need goes to the lists that still have more jobs than fit. Empty lists show
+  // just their header.
+  const WEIGHT = { late: 2, today: 3, next: 1 };
+  function sizeColumns() {
+    const els = [...document.querySelectorAll('.tv-col')];
+    els.forEach((el) => { el.style.flex = ''; });
+    if (!matchMedia('(orientation: portrait)').matches) return;
+    const wrap = $('cols');
+    let avail = wrap.clientHeight - (parseFloat(getComputedStyle(wrap).rowGap) || 0) * (els.length - 1);
+    const live = [];
+    for (const el of els) {
+      if (el.classList.contains('empty-col')) { avail -= el.offsetHeight; continue; }
+      const need = el.querySelector('h2').offsetHeight + el.querySelector('.list').scrollHeight + el.querySelector('.page-dots').offsetHeight + 2;
+      live.push({ el, need, w: WEIGHT[el.dataset.k] || 1 });
+    }
+    let rest = live.slice();
+    for (let changed = true; changed && rest.length;) {
+      changed = false;
+      const W = rest.reduce((t, c) => t + c.w, 0);
+      const fits = rest.find((c) => c.need <= (avail * c.w) / W);
+      if (fits) { fits.h = fits.need; avail -= fits.need; rest = rest.filter((c) => c !== fits); changed = true; }
+    }
+    const W = rest.reduce((t, c) => t + c.w, 0);
+    rest.forEach((c) => { c.h = (avail * c.w) / W; });
+    live.forEach((c) => { c.el.style.flex = `0 0 ${Math.max(0, Math.floor(c.h))}px`; });
   }
 
   // Page through columns whose list is taller than the screen.
@@ -100,5 +122,5 @@
   tick(); setInterval(tick, 10000);
   refresh(); setInterval(refresh, 60000);
   setInterval(() => applyOffsets(true), PAGE_SECONDS * 1000);
-  addEventListener('resize', () => applyOffsets());
+  addEventListener('resize', () => { sizeColumns(); applyOffsets(); });
 })();

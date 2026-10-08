@@ -78,7 +78,7 @@
     $('stages').innerHTML = list.length ? `<div class="hbars">${list.map(([name, n]) => `
       <div class="row" data-stage="${M.esc(name)}" title="Show ${M.esc(name)}">
         <div class="name">${M.esc(name)}</div>
-        <div class="track"><div class="fill" style="width:${(n / max) * 100}%"></div></div>
+        <div class="track"><div class="fill" style="width:${(n / max) * 100}%${M.stageColor(name) ? ';background:' + M.stageColor(name) : ''}"></div></div>
         <div class="count num">${n}</div>
       </div>`).join('')}</div>` : '<p class="hint">No open jobs yet.</p>';
     $('stages').querySelectorAll('.row').forEach((el) => el.addEventListener('click', () => { f.stage = el.dataset.stage; render(); }));
@@ -163,7 +163,7 @@
         <td><span class="due ${b === 'late' || b === 'today' ? b : ''}">${M.fmtDay(j.dateDue)}</span> ${M.dueBadge(j, today)}</td>
         <td class="nb-cell">${M.needBy(j) ? `<b>${M.fmtDay(M.needBy(j))}</b>` : `<span class="muted">${M.esc(M.needByText(j)) || '—'}</span>`}</td>
         <td class="title"><div>${rp ? M.REPRINT_BADGE : ''}${M.esc(j.title)}</div><div class="cust">${M.esc(j.customer)}</div></td>
-        <td>${stageOf(j) ? `<span class="stage">${M.esc(stageOf(j))}</span>` : ''}</td>
+        <td>${M.stageChip(stageOf(j))}</td>
         <td>${M.esc(M.person('csr', j.csrNo))}</td>
         <td class="num right">${M.money(M.amount(j))}</td>
       </tr>`;
@@ -174,7 +174,7 @@
   function detail(j) {
     const lines = (j.items || []).map((i) => {
       const what = i.serNo === 0 ? `<b>${M.esc(i.description || 'Item ' + i.itemNo)}</b>${i.qty ? ' · qty ' + i.qty.toLocaleString() : ''}` : `${M.esc(M.lab('service', i.serNo, 'Service'))}${i.empNo ? ' · ' + M.esc(M.person('employee', i.empNo)) : ''}`;
-      return `<div class="item"><span class="k">Line ${i.itemNo}${i.subNo ? '.' + i.subNo : ''}</span><span>${what}</span>${i.serNo === 0 && M.ignored(i.status) ? '' : `<span class="stage">${M.esc(M.lab('itemStatus', i.status, 'Status'))}</span>`}</div>`;
+      return `<div class="item"><span class="k">Line ${i.itemNo}${i.subNo ? '.' + i.subNo : ''}</span><span>${what}</span>${i.serNo === 0 && M.ignored(i.status) ? '' : M.stageChip(M.lab('itemStatus', i.status, 'Status'))}</div>`;
     }).join('');
     return `<tr class="detail"><td colspan="7">
       <div style="display:flex;gap:28px;flex-wrap:wrap;font-size:12px;color:var(--text-2)">

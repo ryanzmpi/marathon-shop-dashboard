@@ -129,6 +129,15 @@ const MSD = (() => {
     return data;
   }
 
+  // Stage colours come from labels.stageColors (by stage name). Chips use dark text since
+  // the colours are bright.
+  const stageColor = (name) => (L.stageColors || {})[name] || '';
+  function stageChip(name) {
+    if (!name) return '';
+    const c = stageColor(name);
+    return `<span class="stage${c ? ' coloured' : ''}"${c ? ` style="background:${esc(c)}"` : ''}>${esc(name)}</span>`;
+  }
+
   // Stages present in the data as [name, count, code], in labels.stageOrder order if given,
   // otherwise by status number.
   function stageList(jobs) {
@@ -170,5 +179,5 @@ const MSD = (() => {
     tipEl.style.left = x + 'px'; tipEl.style.top = y + 'px';
   }
 
-  return { ignored, stage, stageCode, amount, prevWorkday, workdayOf, workdayBefore, needBy, needByText, cmpNeedBy, cmpDueThenNB, isReprint, REPRINT_BADGE, parse, addDays, diffDays, isWeekend, nextWorkday, weekStart, fmtShort, fmtDay, fmtLong, money, moneyK, esc, lab, jobStage, itemStage, mainLine, person, bucket, BUCKET_NAMES, ICONS, dueBadge, load, stageList, scanPill, tip };
+  return { stageColor, stageChip, ignored, stage, stageCode, amount, prevWorkday, workdayOf, workdayBefore, needBy, needByText, cmpNeedBy, cmpDueThenNB, isReprint, REPRINT_BADGE, parse, addDays, diffDays, isWeekend, nextWorkday, weekStart, fmtShort, fmtDay, fmtLong, money, moneyK, esc, lab, jobStage, itemStage, mainLine, person, bucket, BUCKET_NAMES, ICONS, dueBadge, load, stageList, scanPill, tip };
 })();
