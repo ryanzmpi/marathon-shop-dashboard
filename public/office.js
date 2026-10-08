@@ -87,18 +87,16 @@
   // ---------------- sales chart ----------------
   // The last 10 business days, ending today (or the last weekday if today is a weekend).
   // Each day shows "shipped $ / due $": dollars shipped that day out of the dollar total of
-  // every job due that day (already shipped or still open). Weekend ship dates count on the
+  // jobs due that day (still open, or shipped that day or later; jobs that shipped early drop out). Weekend ship dates count on the
   // Friday before; weekend due dates count on the Monday after (same as the workload chart).
   function renderSales(inv, today, scan) {
     const days = [];
     let d = M.isWeekend(today) ? M.prevWorkday(today) : today;
     for (let i = 0; i < 10; i++, d = M.prevWorkday(d)) days.unshift(d);
-    const openNos = new Set(data.open.map((j) => j.jobNo));
-    const everyJob = [...data.open, ...inv.filter((j) => !openNos.has(j.jobNo))];
     const sum = (a) => a.reduce((t, j) => t + M.amount(j), 0);
     const cols = days.map((day) => {
       const jobs = inv.filter((j) => j.dateShipped && M.workdayBefore(j.dateShipped) === day);
-      const dueJobs = everyJob.filter((j) => j.dateDue && M.workdayOf(j.dateDue) === day);
+      const dueJobs = M.jobsDueOn(data, day, true); // due that day, not shipped early
       return { d: day, jobs, amt: sum(jobs), dueJobs, due: sum(dueJobs) };
     });
     const max = Math.max(1, ...cols.map((c) => Math.max(c.amt, c.due)));
