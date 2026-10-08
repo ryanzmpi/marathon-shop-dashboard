@@ -34,8 +34,21 @@
   .tv-col.today h2 { color: var(--warning); }
   .viewport { flex: 1; overflow: hidden; position: relative; }
   .list { transition: transform 1s ease; }
-  .tv-job { display: grid; grid-template-columns: auto 1fr; gap: .1em 1em; padding: 1vh 1.2vw; border-bottom: 1px solid var(--border); }
-  .tv-job .no { font-size: 1.35em; font-weight: 700; font-variant-numeric: tabular-nums; grid-row: span 2; }
+  .tv-job { display: grid; grid-template-columns: auto 1fr auto; grid-template-areas: "no t csr" "no m csr"; gap: .1em 1em; padding: 1vh 1.2vw; border-bottom: 1px solid var(--border); }
+  .tv-job .no { grid-area: no; } .tv-job .t { grid-area: t; } .tv-job .m { grid-area: m; }
+  .tv-job .cust { color: var(--text-2); overflow: hidden; text-overflow: ellipsis; }
+  /* CSR sits on its own at the right edge of the row */
+  .tv-job .csr { grid-area: csr; align-self: center; display: flex; align-items: center; gap: .4em; padding: .25em .7em; border: 1px solid var(--border); border-radius: 999px; background: var(--surface-2); color: var(--text); font-weight: 600; white-space: nowrap; }
+  .tv-job .csr svg { width: .95em; height: .95em; color: var(--muted); }
+  .tv-job .m .stage, .tv-job .nb, .tv-job .lateby { flex-shrink: 0; }
+  .tv-job .cust { min-width: 5em; }
+  /* horizontal screens have narrow columns: keep the CSR bubble compact */
+  @media (orientation: landscape) {
+    .tv-job { gap: .1em .7em; }
+    .tv-job .csr { padding: .15em .55em; font-size: .9em; gap: .3em; }
+    .tv-job .cust { min-width: 2.5em; }
+  }
+  .tv-job .no { font-size: 1.35em; font-weight: 700; font-variant-numeric: tabular-nums; }
   .tv-job .t { font-size: 1.15em; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .tv-job .m { color: var(--text-2); display: flex; gap: .8em; align-items: center; white-space: nowrap; overflow: hidden; }
   .tv-job .m .stage { font-size: .9em; }
@@ -47,6 +60,7 @@
   .tv-stage .l { color: var(--text-2); font-size: .95em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .tv-stage .v { font-size: 2em; font-weight: 700; font-variant-numeric: tabular-nums; }
   .tv-head .scan-pill { font-size: .75em; }
+  .tv-kpi .v .of { font-size: .5em; font-weight: 600; color: var(--text-2); margin-left: .1em; }
   .tv-job.reprint { background: var(--critical-soft); box-shadow: inset .4em 0 0 var(--critical); }
   .tv-job .nb { font-weight: 700; color: var(--text); background: var(--accent-soft); border-radius: 6px; padding: 0 .45em; }
   .tv-job .nb.none { font-weight: 500; color: var(--muted); background: none; padding: 0; }

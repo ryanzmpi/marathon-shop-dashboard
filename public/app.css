@@ -89,6 +89,7 @@ main { padding: 20px 24px 40px; margin: 0 auto; display: grid; gap: 20px; }
 .kpi[data-bucket]:hover { border-color: var(--accent); }
 .kpi .label { font-size: 12px; color: var(--text-2); display: flex; align-items: center; gap: 6px; }
 .kpi .value { font-size: 28px; font-weight: 650; letter-spacing: -0.02em; margin-top: 2px; }
+.kpi .value .of { font-size: 18px; font-weight: 600; color: var(--text-2); margin-left: 1px; }
 .kpi .foot { font-size: 12px; color: var(--muted); }
 .kpi.critical { border-left: 4px solid var(--critical); }
 .kpi.warning { border-left: 4px solid var(--warning); }

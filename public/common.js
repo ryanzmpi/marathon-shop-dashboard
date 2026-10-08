@@ -129,6 +129,16 @@ const MSD = (() => {
     return data;
   }
 
+  // "Left / total" for today's due jobs: jobs still open and due today, out of every job due
+  // today (open + already shipped). Returns HTML like 7<span class="of">/41</span>.
+  function dueTodayFraction(data) {
+    const t = data.today;
+    const left = data.open.filter((j) => j.dateDue === t).length;
+    const openNos = new Set(data.open.map((j) => j.jobNo));
+    const shipped = (data.invoiced || []).filter((j) => j.dateDue === t && !openNos.has(j.jobNo)).length;
+    return `${left}<span class="of">/${left + shipped}</span>`;
+  }
+
   // Stage colours come from labels.stageColors (by stage name). Chips use dark text since
   // the colours are bright.
   const stageColor = (name) => (L.stageColors || {})[name] || '';
@@ -179,5 +189,5 @@ const MSD = (() => {
     tipEl.style.left = x + 'px'; tipEl.style.top = y + 'px';
   }
 
-  return { stageColor, stageChip, ignored, stage, stageCode, amount, prevWorkday, workdayOf, workdayBefore, needBy, needByText, cmpNeedBy, cmpDueThenNB, isReprint, REPRINT_BADGE, parse, addDays, diffDays, isWeekend, nextWorkday, weekStart, fmtShort, fmtDay, fmtLong, money, moneyK, esc, lab, jobStage, itemStage, mainLine, person, bucket, BUCKET_NAMES, ICONS, dueBadge, load, stageList, scanPill, tip };
+  return { dueTodayFraction, stageColor, stageChip, ignored, stage, stageCode, amount, prevWorkday, workdayOf, workdayBefore, needBy, needByText, cmpNeedBy, cmpDueThenNB, isReprint, REPRINT_BADGE, parse, addDays, diffDays, isWeekend, nextWorkday, weekStart, fmtShort, fmtDay, fmtLong, money, moneyK, esc, lab, jobStage, itemStage, mainLine, person, bucket, BUCKET_NAMES, ICONS, dueBadge, load, stageList, scanPill, tip };
 })();

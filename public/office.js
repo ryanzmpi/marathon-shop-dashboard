@@ -22,7 +22,7 @@
     const sum = (a) => a.reduce((s, j) => s + M.amount(j), 0);
     const tiles = [
       { b: 'late', cls: 'critical', icon: M.ICONS.late, label: 'Late', value: by('late'), foot: 'past due date' },
-      { b: 'today', cls: 'warning', icon: M.ICONS.today, label: 'Due today', value: by('today'), foot: M.fmtLong(today) },
+      { b: 'today', cls: 'warning', icon: M.ICONS.today, label: 'Due today · left / total', value: M.dueTodayFraction(data), foot: M.fmtLong(today) },
       { b: 'next', label: 'Due next workday', value: by('next'), foot: M.fmtLong(nw) },
       { b: 'week', label: 'Due in the next week', value: by('week'), foot: 'after next workday' },
       { b: 'all', label: 'Open jobs', value: open.length, foot: `${by('nodate')} without a due date` },

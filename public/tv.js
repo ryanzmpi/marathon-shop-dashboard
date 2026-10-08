@@ -10,6 +10,7 @@
     $('clock').textContent = new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
   }
 
+  const CSR_ICON = '<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="5" r="3" fill="currentColor"/><path d="M2.5 14.5c.6-3 2.8-4.5 5.5-4.5s4.9 1.5 5.5 4.5" fill="currentColor"/></svg>';
   function jobRow(j, today, showLate) {
     const lateBy = showLate ? -M.diffDays(j.dateDue, today) : 0;
     const rp = M.isReprint(j);
@@ -19,10 +20,10 @@
       <div class="m">
         ${M.needBy(j) ? `<span class="nb">NB ${M.fmtShort(M.needBy(j))}</span>` : `<span class="nb none">${M.esc(M.needByText(j)) || 'No NB'}</span>`}
         ${lateBy ? `<span class="lateby">${lateBy}d late</span>` : ''}
-        <span>${M.esc(j.customer || '')}</span>
-        ${j.csrNo ? `<span>${M.esc(M.person('csr', j.csrNo))}</span>` : ''}
+        <span class="cust">${M.esc(j.customer || '')}</span>
         ${M.stageChip(stageOf(j))}
       </div>
+      ${j.csrNo ? `<div class="csr" title="CSR">${CSR_ICON}<span>${M.esc(M.person('csr', j.csrNo))}</span></div>` : ''}
     </div>`;
   }
 
@@ -40,7 +41,7 @@
 
     $('kpis').innerHTML = [
       ['critical', M.ICONS.late, 'Late', late.length],
-      ['warning', M.ICONS.today, 'Due today', due.length],
+      ['warning', M.ICONS.today, 'Due today · left / total', M.dueTodayFraction(data)],
       ['', '', 'Due ' + M.fmtDay(nw), next.length],
       ['', '', 'Open jobs', open.length],
     ].map(([c, i, l, v]) => `<div class="tv-kpi ${c}"><div class="l">${i}${l}</div><div class="v">${v}</div></div>`).join('');
