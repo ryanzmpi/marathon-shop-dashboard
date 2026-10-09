@@ -88,7 +88,7 @@
     .tv-stage .v { font-size: 1.8em; }
   }
   /* ---------- office board: horizontal TV with goal gauges ---------- */
-  .tv { grid-template-rows: auto auto 1fr auto auto; }
+  .tv { grid-template-rows: auto auto auto 1fr auto; }
   .tv-gauges { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1vw; }
   .tv-gauges .gauge { background: var(--surface); border: 0; border-radius: 12px; padding: 1vh 1vw 1.2vh; text-align: center; }
   .tv-gauges .gauge h3 { font-size: 1.05em; margin: 0; text-align: left; color: var(--text-2); font-weight: 600; }
@@ -111,8 +111,8 @@
     <span class="clock" id="clock"></span>
   </div>
   <div class="tv-kpis" id="kpis"></div>
-  <div class="tv-cols" id="cols"></div>
   <div class="tv-gauges" id="gauges"></div>
+  <div class="tv-cols" id="cols"></div>
   <div>
     <div class="tv-stages" id="stages"></div>
   </div>
