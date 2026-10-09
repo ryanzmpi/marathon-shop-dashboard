@@ -89,6 +89,11 @@
   }
   /* ---------- office board: horizontal TV with goal gauges ---------- */
   .tv { grid-template-rows: auto auto auto 1fr auto; }
+  /* No late jobs: drop the Late column and give Due today the extra room. */
+  @media (orientation: landscape) {
+    .tv-cols.no-late { grid-template-columns: 1.4fr 1fr; }
+    .tv-cols.no-late .tv-col.late { display: none; }
+  }
   .tv-gauges { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1vw; }
   .tv-gauges .gauge { background: var(--surface); border: 0; border-radius: 12px; padding: 1vh 1vw 1.2vh; text-align: center; }
   .tv-gauges .gauge h3 { font-size: 1.05em; margin: 0; text-align: left; color: var(--text-2); font-weight: 600; }
