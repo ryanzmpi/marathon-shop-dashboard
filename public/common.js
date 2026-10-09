@@ -181,6 +181,25 @@ const MSD = (() => {
     </svg>`;
   }
 
+  // The four goal gauge cards (used by the office view and the office TV).
+  function renderGauges(el, data) {
+    if (!el) return;
+    const g = data.gauges || {}, t = data.targets || {};
+    const cards = [
+      ['Received Today', g.receivedToday, t.receivedToday, 'Jobs entered today'],
+      ['Shipped Today', g.shippedToday, t.shippedToday, "Jobs with today's ship date"],
+      ['Shipped This Month', g.shippedMonth, t.shippedMonth, 'Since the 1st'],
+      ['Shipped This Year', g.shippedYear, t.shippedYear, g.yearHistoryLoaded ? 'Since January 1' : "Still loading this year's history…"],
+    ];
+    el.innerHTML = cards.map(([label, v = 0, target = 0, note]) => `
+      <div class="card gauge">
+        <h3>${label}</h3>
+        ${gaugeSvg(v, target)}
+        <div class="g-value num">${money(v).replace('—', '$0')}</div>
+        <div class="g-foot">${target ? Math.round((v / target) * 100) + '% of ' + money(target) + ' target' : 'No target set'}<span class="g-note"> · ${note}</span></div>
+      </div>`).join('');
+  }
+
   // Stage colours come from labels.stageColors (by stage name). Chips use dark text since
   // the colours are bright.
   const stageColor = (name) => (L.stageColors || {})[name] || '';
@@ -231,5 +250,5 @@ const MSD = (() => {
     tipEl.style.left = x + 'px'; tipEl.style.top = y + 'px';
   }
 
-  return { gaugeSvg, jobsDueOn, dueTodayFraction, stageColor, stageChip, ignored, stage, stageCode, amount, prevWorkday, workdayOf, workdayBefore, needBy, needByText, cmpNeedBy, cmpDueThenNB, isReprint, REPRINT_BADGE, parse, addDays, diffDays, isWeekend, nextWorkday, weekStart, fmtShort, fmtDay, fmtLong, money, moneyK, esc, lab, jobStage, itemStage, mainLine, person, bucket, BUCKET_NAMES, ICONS, dueBadge, load, stageList, scanPill, tip };
+  return { renderGauges, gaugeSvg, jobsDueOn, dueTodayFraction, stageColor, stageChip, ignored, stage, stageCode, amount, prevWorkday, workdayOf, workdayBefore, needBy, needByText, cmpNeedBy, cmpDueThenNB, isReprint, REPRINT_BADGE, parse, addDays, diffDays, isWeekend, nextWorkday, weekStart, fmtShort, fmtDay, fmtLong, money, moneyK, esc, lab, jobStage, itemStage, mainLine, person, bucket, BUCKET_NAMES, ICONS, dueBadge, load, stageList, scanPill, tip };
 })();

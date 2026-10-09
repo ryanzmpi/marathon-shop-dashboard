@@ -4,6 +4,7 @@ A web dashboard showing open jobs from Printer's Plan. It reads job data from th
 
 - **Office view** (`/`): late, due today and upcoming counts; a workload chart; jobs by stage; shipped totals; and a searchable, sortable job table. Click any row to see its line items and work-order note.
 - **Goal gauges** (office view): Received Today, Shipped Today, Shipped This Month and Shipped This Year, each against a target. Change the targets at **`/settings`** (the "Edit targets" link): type the numbers and click Save. No code changes are needed.
+- **Office TV** (`/office-tv`): built for a normal horizontal TV. It has the same summary tiles and Late / Due today / next-workday lists as the shop TV, plus the four goal gauges.
 - **Reprints:** any job with "reprint" in its title is flagged red, with a Reprint label, on both views.
 - **TV view** (`/tv`): a full-screen display for the shop floor (works on vertical and horizontal screens) showing Late, Due today and Due next workday. It refreshes every minute and pages through long lists on its own.
 

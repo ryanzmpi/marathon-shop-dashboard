@@ -60,6 +60,7 @@
     document.querySelectorAll('.tv-col').forEach((el, i) => el.classList.toggle('empty-col', cols[i].jobs.length === 0));
     const stages = M.stageList(open);
     $('stages').innerHTML = stages.map(([name, n]) => `<div class="tv-stage" style="border-left-color:${M.stageColor(name) || 'var(--border)'}"><div class="l">${M.esc(name)}</div><div class="v">${n}</div></div>`).join('');
+    M.renderGauges($('gauges'), data); // only on pages that have a gauges row (office TV)
     sizeColumns();
     applyOffsets(); // after everything is drawn, so list heights are final
   }

@@ -129,6 +129,7 @@ const server = http.createServer(async (req, res) => {
   if (p === '/settings' || p === '/settings.html') return sendFile(res, 'settings.html');
   if (p === '/' || p === '/index.html') return sendFile(res, 'index.html');
   if (p === '/tv' || p === '/tv.html') return sendFile(res, 'tv.html');
+  if (p === '/office-tv' || p === '/office-tv.html') return sendFile(res, 'office-tv.html');
   if (/^\/[a-z0-9_-]+\.(css|js|svg|ico)$/i.test(p)) return sendFile(res, p.slice(1));
   return send(res, 404, 'Not found');
 });
