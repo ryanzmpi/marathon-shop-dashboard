@@ -1,13 +1,13 @@
 {
   "_help": "Fill in names for Printer's Plan codes. Anything left out shows as its number (e.g. 'Status 3'). You can also paste this whole JSON into the LABELS_JSON variable in Railway instead of editing this file.",
   "jobStatus": {},
-  "itemStatus": {"4": "Misc", "5": "Not Approved", "6": "Pre Press", "8": "Production", "9": "Production", "12": "Stock", "13": "Misc", "14": "Wide Format", "16": "Production", "17": "Stock"},
+  "itemStatus": {"4": "Misc", "5": "Not Approved", "6": "Pre Press", "8": "Press", "9": "Production", "12": "Stock", "13": "Misc", "14": "Wide Format", "16": "Production", "17": "Stock"},
   "csr": {"101": "Shawn", "102": "Connor", "103": "Anthony", "104": "Ryan", "105": "Jen"},
   "salesRep": {},
   "employee": {},
   "service": {},
   "ignoreItemStatuses": [],
-  "stageOrder": ["Not Approved", "Pre Press", "Production", "Wide Format", "Stock", "Misc"],
-  "stageColors": {"Not Approved": "#1BFC06", "Pre Press": "#FFFF00", "Production": "#30C5FF", "Wide Format": "#FF793B", "Stock": "#FA3BF0", "Misc": "#C8C8C8"},
+  "stageOrder": ["Not Approved", "Pre Press", "Press", "Production", "Wide Format", "Stock", "Misc"],
+  "stageColors": {"Not Approved": "#1BFC06", "Pre Press": "#FFFF00", "Press": "#30C5FF", "Production": "#30C5FF", "Wide Format": "#FF793B", "Stock": "#FA3BF0", "Misc": "#C8C8C8"},
   "hiddenJobStatuses": []
 }
