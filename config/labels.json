@@ -8,6 +8,6 @@
   "service": {},
   "ignoreItemStatuses": [],
   "stageOrder": ["Not Approved", "Pre Press", "Press", "Production", "Wide Format", "Stock", "Misc"],
-  "stageColors": {"Not Approved": "#1BFC06", "Pre Press": "#FFFF00", "Press": "#30C5FF", "Production": "#30C5FF", "Wide Format": "#FF793B", "Stock": "#FA3BF0", "Misc": "#C8C8C8"},
+  "stageColors": {"Not Approved": "#FF0000", "Pre Press": "#FFFF00", "Press": "#30C5FF", "Production": "#FF793B", "Wide Format": "#1BFC06", "Stock": "#FA3BF0", "Misc": "#C8C8C8"},
   "hiddenJobStatuses": []
 }
