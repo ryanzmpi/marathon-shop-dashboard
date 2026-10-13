@@ -59,7 +59,7 @@
     <h2 class="sub-h">Press capacity</h2>
     <div class="field">
       <label for="pressIndigoHours">Indigo hours per day</label>
-      <div class="hint">Press hours available on a workday (the dashed line on the Press time chart)</div>
+      <div class="hint">Press hours available on a workday. Indigo + Ricoh make up the dashed capacity line (the Konica isn't counted)</div>
       <div class="money"><input id="pressIndigoHours" inputmode="decimal"><span class="unit">hours</span></div>
     </div>
     <div class="field">
@@ -67,11 +67,7 @@
       <div class="hint">Press hours available on a workday</div>
       <div class="money"><input id="pressRicohHours" inputmode="decimal"><span class="unit">hours</span></div>
     </div>
-    <div class="field">
-      <label for="pressKonicaHours">Konica hours per day</label>
-      <div class="hint">Press hours available on a workday</div>
-      <div class="money"><input id="pressKonicaHours" inputmode="decimal"><span class="unit">hours</span></div>
-    </div>
+
     <div class="field pin" id="pinField" hidden>
       <label for="pin">PIN</label>
       <div class="hint">Needed to save changes</div>
@@ -85,7 +81,7 @@
   <a class="back" href="/">← Back to dashboard</a>
 </div>
 <script>
-  const KEYS = ['receivedToday', 'shippedToday', 'shippedMonth', 'shippedYear', 'pressIndigoHours', 'pressRicohHours', 'pressKonicaHours'];
+  const KEYS = ['receivedToday', 'shippedToday', 'shippedMonth', 'shippedYear', 'pressIndigoHours', 'pressRicohHours'];
   const HOURS = (k) => k.startsWith('press');
   const fmtK = (k, v) => HOURS(k) ? String(Number(v)) : Number(v).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const $ = (id) => document.getElementById(id);

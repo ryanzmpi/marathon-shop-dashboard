@@ -11,7 +11,7 @@
   "presses": [
     {"name": "Indigo", "services": [574], "color": "#8C7BFF", "hoursKey": "pressIndigoHours"},
     {"name": "Ricoh", "services": [580], "color": "#2EC4B6", "hoursKey": "pressRicohHours"},
-    {"name": "Konica", "services": [744], "color": "#F5A524", "hoursKey": "pressKonicaHours"}
+    {"name": "Konica", "services": [744], "color": "#F5A524"}
   ],
   "pressPendingStatuses": [5, 6, 8],
   "stageOrder": ["Not Approved", "Pre Press", "Press", "Production", "Wide Format", "Stock", "Misc"],

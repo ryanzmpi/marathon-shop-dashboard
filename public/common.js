@@ -230,7 +230,7 @@ const MSD = (() => {
   const PRESSES_DEFAULT = [
     { name: 'Indigo', services: [574], color: '#8C7BFF', hoursKey: 'pressIndigoHours' },
     { name: 'Ricoh', services: [580], color: '#2EC4B6', hoursKey: 'pressRicohHours' },
-    { name: 'Konica', services: [744], color: '#F5A524', hoursKey: 'pressKonicaHours' },
+    { name: 'Konica', services: [744], color: '#F5A524' }, // no capacity: not part of the dashed line
   ];
   const presses = () => L.presses || PRESSES_DEFAULT;
   function pressMinutes(j) {
