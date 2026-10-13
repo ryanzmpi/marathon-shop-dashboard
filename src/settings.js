@@ -16,6 +16,7 @@ const DEFAULTS = {
   // Press hours available per workday, for the press-time chart
   pressIndigoHours: num(process.env.PRESS_INDIGO_HOURS, 8),
   pressRicohHours: num(process.env.PRESS_RICOH_HOURS, 8),
+  pressKonicaHours: num(process.env.PRESS_KONICA_HOURS, 8),
 };
 
 let targets = { ...DEFAULTS };

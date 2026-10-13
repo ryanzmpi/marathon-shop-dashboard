@@ -92,7 +92,7 @@ Ship by Standard Shipping</WOrderNote>
 \t\t</ITEMS_TBL>${j.jobNo % 4 === 3 ? '' : `
 \t\t<ITEMS_TBL>
 \t\t\t<ItemID>3</ItemID>
-\t\t\t<SerNo>${j.jobNo % 4 === 1 ? 580 : 574}</SerNo>
+\t\t\t<SerNo>${j.jobNo % 4 === 1 ? 580 : j.jobNo % 8 === 2 ? 744 : 574}</SerNo>
 \t\t\t<ItemNo>1</ItemNo>
 \t\t\t<Status>1</Status>
 \t\t\t<ChargeQty>500</ChargeQty>
