@@ -218,6 +218,7 @@
     renderGauges();
     renderWorkload(open, today);
     renderStages(open);
+    M.renderPress($('press'), data, { tips: true });
     renderSales(invoiced, today, scan);
     renderTable(open, today);
   }

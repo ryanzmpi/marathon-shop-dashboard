@@ -8,6 +8,11 @@
   "service": {},
   "ignoreItemStatuses": [],
   "qtyFromServices": [592, 593, 596, 612],
+  "presses": [
+    {"name": "Indigo", "services": [574], "color": "#8C7BFF", "hoursKey": "pressIndigoHours"},
+    {"name": "Ricoh", "services": [580], "color": "#2EC4B6", "hoursKey": "pressRicohHours"}
+  ],
+  "pressPendingStatuses": [5, 6, 8],
   "stageOrder": ["Not Approved", "Pre Press", "Press", "Production", "Wide Format", "Stock", "Misc"],
   "stageColors": {"Not Approved": "#FF0000", "Pre Press": "#FFFF00", "Press": "#30C5FF", "Production": "#FF793B", "Wide Format": "#1BFC06", "Stock": "#FA3BF0", "Misc": "#C8C8C8"},
   "hiddenJobStatuses": []

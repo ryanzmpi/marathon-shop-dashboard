@@ -64,6 +64,7 @@
     const stages = M.stageList(open);
     $('stages').innerHTML = stages.map(([name, n]) => `<div class="tv-stage" style="border-left-color:${M.stageColor(name) || 'var(--border)'}"><div class="l">${M.esc(name)}</div><div class="v">${n}</div></div>`).join('');
     M.renderGauges($('gauges'), data); // only on pages that have a gauges row (office TV)
+    M.renderPress($('press'), data, { compact: true }); // office TV only
     sizeColumns();
     applyOffsets(); // after everything is drawn, so list heights are final
   }

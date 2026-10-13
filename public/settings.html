@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
-<title>Gauge Targets</title>
+<title>Targets &amp; Capacity</title>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="/app.css">
 <style>
@@ -26,11 +26,14 @@
   .msg.ok { color: var(--good); }
   .msg.err { color: var(--critical-ink); }
   .back { display: inline-block; margin-top: 16px; }
+  .sub-h { font-size: 15px; margin: 8px 0 -4px; padding-top: 14px; border-top: 1px solid var(--border); }
+  .money .unit { padding: 0 12px 0 4px; font-size: 15px; color: var(--muted); }
+  .money input:first-child { padding-left: 12px; }
 </style>
 </head>
 <body>
 <div class="settings">
-  <h1>Gauge targets</h1>
+  <h1>Targets &amp; capacity</h1>
   <p class="lead">Type a new target and click Save. The gauges update within a minute.</p>
   <form id="f" autocomplete="off">
     <div class="field">
@@ -53,21 +56,33 @@
       <div class="hint">Dollar total shipped in the calendar year</div>
       <div class="money"><span>$</span><input id="shippedYear" inputmode="decimal"></div>
     </div>
+    <h2 class="sub-h">Press capacity</h2>
+    <div class="field">
+      <label for="pressIndigoHours">Indigo hours per day</label>
+      <div class="hint">Press hours available on a workday (the dashed line on the Press time chart)</div>
+      <div class="money"><input id="pressIndigoHours" inputmode="decimal"><span class="unit">hours</span></div>
+    </div>
+    <div class="field">
+      <label for="pressRicohHours">Ricoh hours per day</label>
+      <div class="hint">Press hours available on a workday</div>
+      <div class="money"><input id="pressRicohHours" inputmode="decimal"><span class="unit">hours</span></div>
+    </div>
     <div class="field pin" id="pinField" hidden>
       <label for="pin">PIN</label>
       <div class="hint">Needed to save changes</div>
       <input id="pin" type="password" inputmode="numeric">
     </div>
     <div class="actions">
-      <button type="submit" id="save">Save targets</button>
+      <button type="submit" id="save">Save</button>
       <span class="msg" id="msg" role="status"></span>
     </div>
   </form>
   <a class="back" href="/">← Back to dashboard</a>
 </div>
 <script>
-  const KEYS = ['receivedToday', 'shippedToday', 'shippedMonth', 'shippedYear'];
-  const fmt = (v) => Number(v).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const KEYS = ['receivedToday', 'shippedToday', 'shippedMonth', 'shippedYear', 'pressIndigoHours', 'pressRicohHours'];
+  const HOURS = (k) => k.startsWith('press');
+  const fmtK = (k, v) => HOURS(k) ? String(Number(v)) : Number(v).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const $ = (id) => document.getElementById(id);
   const msg = (t, cls) => { $('msg').textContent = t; $('msg').className = 'msg ' + (cls || ''); };
 
@@ -75,14 +90,14 @@
     const res = await fetch('/api/settings', { cache: 'no-store' });
     if (res.status === 401) { location.href = '/login?next=/settings'; return; }
     const d = await res.json();
-    KEYS.forEach((k) => { $(k).value = fmt(d.targets[k] || 0); });
+    KEYS.forEach((k) => { $(k).value = fmtK(k, d.targets[k] || 0); });
     $('pinField').hidden = !d.pinRequired;
   }
 
   // Tidy the number when you leave a box: 15833.4 -> 15,833.40
   KEYS.forEach((k) => $(k).addEventListener('blur', () => {
     const v = Number($(k).value.replace(/[$,\s]/g, ''));
-    if ($(k).value.trim() && isFinite(v)) $(k).value = fmt(v);
+    if ($(k).value.trim() && isFinite(v)) $(k).value = fmtK(k, v);
   }));
 
   $('f').addEventListener('submit', async (e) => {
@@ -98,7 +113,7 @@
       const res = await fetch('/api/settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ targets, pin: $('pin').value }) });
       const d = await res.json();
       if (!res.ok) throw new Error(d.error || 'Could not save');
-      KEYS.forEach((k) => { $(k).value = fmt(d.targets[k]); });
+      KEYS.forEach((k) => { $(k).value = fmtK(k, d.targets[k]); });
       msg('Saved ✓', 'ok');
     } catch (err) {
       msg(err.message, 'err');

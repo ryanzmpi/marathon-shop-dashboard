@@ -86,6 +86,7 @@ function parseJob(xml) {
       status: n(tag(s, 'Status')),
       empNo: n(tag(s, 'EmpNo')),
       qty: n(tag(s, 'ChargeQty')),
+      minutes: n(tag(s, 'ChargeTime')), // estimated minutes on service lines (press, cutting, …)
       price: n(tag(s, 'Price')),
       description: tag(s, 'Description'),
       note: tag(s, 'Note').slice(0, 200),

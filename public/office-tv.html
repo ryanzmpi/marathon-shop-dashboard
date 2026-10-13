@@ -105,7 +105,20 @@
     .tv-cols.no-late { grid-template-columns: 1.4fr 1fr; }
     .tv-cols.no-late .tv-col.late { display: none; }
   }
+  .tv-top { display: grid; grid-template-columns: 4fr 1.55fr; gap: 1vw; }
   .tv-gauges { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1vw; }
+  .tv-press { background: var(--surface); border-radius: 12px; padding: 1vh 1vw 1vh; display: flex; flex-direction: column; min-width: 0; }
+  .tv-press h3 { font-size: 1.05em; margin: 0 0 .4vh; color: var(--text-2); font-weight: 600; }
+  .tv-press h3 small { color: var(--muted); font-weight: 500; font-size: .8em; margin-left: .3em; }
+  .tv-press #press { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+  .tv-press .press-legend { font-size: .85em; gap: .2em .9em; margin-bottom: .5vh; }
+  .tv-press .press-legend .press-total b { font-size: 1.35em; }
+  .tv-press .press-legend .press-total { width: 100%; }
+  .tv-press .pbars { flex: 1; height: auto; min-height: 9vh; gap: .4vw; }
+  .tv-press .pbars + .vlabels { gap: .4vw; }
+  .tv-press .pval { font-size: .8em; }
+  .tv-press .vlabels span { font-size: .78em; }
+  @media (orientation: portrait) { .tv-top { grid-template-columns: 1fr; } }
   .tv-gauges .gauge { background: var(--surface); border: 0; border-radius: 12px; padding: 1vh 1vw 1.2vh; text-align: center; }
   .tv-gauges .gauge h3 { font-size: 1.05em; margin: 0; text-align: left; color: var(--text-2); font-weight: 600; }
   .tv-gauges .gauge-svg { height: 15vh; width: auto; max-width: 100%; margin: .3vh auto 0; }
@@ -127,7 +140,10 @@
     <span class="clock" id="clock"></span>
   </div>
   <div class="tv-kpis" id="kpis"></div>
-  <div class="tv-gauges" id="gauges"></div>
+  <div class="tv-top">
+    <div class="tv-gauges" id="gauges"></div>
+    <div class="tv-press"><h3>Press time <small>est. hours by due date</small></h3><div id="press"></div></div>
+  </div>
   <div class="tv-cols" id="cols"></div>
   <div>
     <div class="tv-stages" id="stages"></div>

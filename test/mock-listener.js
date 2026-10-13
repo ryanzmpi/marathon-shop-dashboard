@@ -88,7 +88,16 @@ Ship by Standard Shipping</WOrderNote>
 \t\t\t<Status>1</Status>
 \t\t\t<EmpNo>3</EmpNo>
 \t\t\t<ChargeQty>1</ChargeQty>
-\t\t</ITEMS_TBL>
+\t\t\t<ChargeTime>8</ChargeTime>
+\t\t</ITEMS_TBL>${j.jobNo % 4 === 3 ? '' : `
+\t\t<ITEMS_TBL>
+\t\t\t<ItemID>3</ItemID>
+\t\t\t<SerNo>${j.jobNo % 4 === 1 ? 580 : 574}</SerNo>
+\t\t\t<ItemNo>1</ItemNo>
+\t\t\t<Status>1</Status>
+\t\t\t<ChargeQty>500</ChargeQty>
+\t\t\t<ChargeTime>${10 + (j.jobNo * 37) % 170}</ChargeTime>
+\t\t</ITEMS_TBL>`}
 \t</ITEMS_TBL>
 </job>`;
 }

@@ -223,6 +223,95 @@ const MSD = (() => {
       </div>`).join('');
   }
 
+  // ---------- press time ----------
+  // Estimated press minutes come from the service lines on each product item (ChargeTime).
+  // labels.presses says which service numbers belong to which press; only product lines that
+  // haven't been printed yet (status in labels.pressPendingStatuses) count toward the queue.
+  const PRESSES_DEFAULT = [
+    { name: 'Indigo', services: [574], color: '#8C7BFF', hoursKey: 'pressIndigoHours' },
+    { name: 'Ricoh', services: [580], color: '#2EC4B6', hoursKey: 'pressRicohHours' },
+  ];
+  const presses = () => L.presses || PRESSES_DEFAULT;
+  function pressMinutes(j) {
+    const pending = (L.pressPendingStatuses || [5, 6, 8]).map(Number);
+    const out = {};
+    const items = j.items || [];
+    for (const p of presses()) {
+      const svcs = p.services.map(Number);
+      out[p.name] = items
+        .filter((i) => i.serNo === 0 && pending.includes(i.status))
+        .reduce((t, main) => t + items
+          .filter((s) => s.itemNo === main.itemNo && s.serNo > 0 && svcs.includes(s.serNo))
+          .reduce((u, s) => u + (s.minutes || 0), 0), 0);
+    }
+    return out;
+  }
+  const fmtHrs = (min) => (min >= 600 ? Math.round(min / 60) : Math.round(min / 6) / 10).toLocaleString('en-US') + 'h';
+
+  // Late + the next 5 business days + everything later, each split by press.
+  function pressBuckets(data) {
+    const { open = [], today, targets = {} } = data;
+    const cols = [{ key: 'late', label: 'Late', sub: '', late: true }];
+    let d = isWeekend(today) ? nextWorkday(today) : today;
+    for (let i = 0; i < 5; i++, d = nextWorkday(d)) cols.push({ key: d, label: d === today ? 'Today' : fmtDay(d).split(' ')[0], sub: fmtShort(d), strong: d === today, day: true });
+    cols.push({ key: 'later', label: 'Later', sub: '' });
+    const last = cols[cols.length - 2].key;
+    cols.forEach((c) => { c.min = {}; c.jobs = []; presses().forEach((p) => { c.min[p.name] = 0; }); });
+    for (const j of open) {
+      const m = pressMinutes(j);
+      const tot = Object.values(m).reduce((a, b) => a + b, 0);
+      if (!tot) continue;
+      let c;
+      if (j.dateDue && j.dateDue < today) c = cols[0];
+      else if (!j.dateDue || workdayOf(j.dateDue) > last) c = cols[cols.length - 1];
+      else c = cols.find((x) => x.key === workdayOf(j.dateDue));
+      if (!c) continue;
+      presses().forEach((p) => { c.min[p.name] += m[p.name]; });
+      c.jobs.push(j);
+    }
+    const capMin = presses().reduce((t, p) => t + (Number(targets[p.hoursKey]) || 0) * 60, 0);
+    cols.forEach((c) => { c.total = Object.values(c.min).reduce((a, b) => a + b, 0); });
+    const queue = {};
+    presses().forEach((p) => { queue[p.name] = cols.reduce((t, c) => t + c.min[p.name], 0); });
+    return { cols, capMin, queue, queueTotal: Object.values(queue).reduce((a, b) => a + b, 0) };
+  }
+
+  // Stacked bars (one colour per press) with a dashed line at the daily capacity.
+  function renderPress(el, data, opts = {}) {
+    if (!el) return;
+    const { cols, capMin, queue, queueTotal } = pressBuckets(data);
+    const max = Math.max(1, capMin * 1.1, ...cols.filter((c) => c.key !== 'later').map((c) => c.total)); // a big 'Later' pile is capped so it doesn't flatten the week
+    const ps = presses();
+    const legend = `<div class="press-legend">
+        <span class="press-total"><b class="num">${fmtHrs(queueTotal)}</b> press time in queue</span>
+        ${ps.map((p) => `<span class="press-key"><i style="background:${esc(p.color)}"></i>${esc(p.name)} <b class="num">${fmtHrs(queue[p.name])}</b></span>`).join('')}
+        ${capMin ? `<span class="press-key cap"><i></i>Capacity ${fmtHrs(capMin)}/day</span>` : ''}
+      </div>`;
+    el.innerHTML = `${legend}
+      <div class="pbars">${cols.map((c, i) => {
+        const over = c.day && ps.some((p) => { const cap = (Number((data.targets || {})[p.hoursKey]) || 0) * 60; return cap && c.min[p.name] > cap; }); // any press booked past its own hours
+        return `<div class="pcol${c.late ? ' late' : ''}${c.key === 'later' ? ' later' : ''}" data-i="${i}">
+          ${c.total ? `<div class="pval num${over ? ' over' : ''}">${fmtHrs(c.total)}</div>` : ''}
+          <div class="pstack" style="height:${Math.min(c.total / max, 1.08) * 85}%">
+            ${ps.map((p) => c.min[p.name] ? `<div class="pseg" style="flex:${c.min[p.name]};background:${esc(p.color)}"></div>` : '').join('')}
+          </div>
+        </div>`;
+      }).join('')}
+      ${capMin ? `<div class="pcap" style="bottom:${(capMin / max) * 85}%"></div>` : ''}
+      </div>
+      <div class="vlabels">${cols.map((c) => `<span class="${c.strong || c.late ? 'strong' : ''}">${c.label}${opts.compact || !c.sub ? '' : '<br>' + c.sub}</span>`).join('')}</div>
+      ${opts.compact ? '' : `<div class="pbreak">${cols.map((c) => `<span>${ps.map((p) => c.min[p.name] ? `<em style="background:${esc(p.color)}"></em>${fmtHrs(c.min[p.name])}` : '').filter(Boolean).join('<br>') || '&nbsp;'}</span>`).join('')}</div>`}`;
+    if (opts.tips) {
+      el.querySelectorAll('.pcol').forEach((pc) => {
+        const c = cols[+pc.dataset.i];
+        const title = c.late ? 'Late' : c.key === 'later' ? 'Due after this week' : fmtLong(c.key);
+        const html = `<b>${title}</b><br>${ps.map((p) => { const cap = Number((data.targets || {})[p.hoursKey]) || 0; return `${esc(p.name)}: ${fmtHrs(c.min[p.name])}${c.day && cap ? ` of ${cap}h` : ''}`; }).join('<br>')}<br>Total: ${fmtHrs(c.total)}${c.day && capMin ? ` of ${fmtHrs(capMin)}` : ''}<br>${c.jobs.length} job${c.jobs.length === 1 ? '' : 's'}`;
+        pc.addEventListener('mousemove', (e) => tip(e, html));
+        pc.addEventListener('mouseleave', (e) => tip(e, null));
+      });
+    }
+  }
+
   // Stage colours come from labels.stageColors (by stage name). Chips use dark text since
   // the colours are bright.
   const stageColor = (name) => (L.stageColors || {})[name] || '';
@@ -273,5 +362,5 @@ const MSD = (() => {
     tipEl.style.left = x + 'px'; tipEl.style.top = y + 'px';
   }
 
-  return { jobQty, fmtQty, renderGauges, gaugeSvg, jobsDueOn, dueTodayFraction, stageColor, stageChip, ignored, stage, stageCode, amount, prevWorkday, workdayOf, workdayBefore, needBy, needByText, cmpNeedBy, cmpDueThenNB, isReprint, REPRINT_BADGE, parse, addDays, diffDays, isWeekend, nextWorkday, weekStart, fmtShort, fmtDay, fmtLong, money, moneyK, esc, lab, jobStage, itemStage, mainLine, person, bucket, BUCKET_NAMES, ICONS, dueBadge, load, stageList, scanPill, tip };
+  return { pressMinutes, pressBuckets, renderPress, fmtHrs, jobQty, fmtQty, renderGauges, gaugeSvg, jobsDueOn, dueTodayFraction, stageColor, stageChip, ignored, stage, stageCode, amount, prevWorkday, workdayOf, workdayBefore, needBy, needByText, cmpNeedBy, cmpDueThenNB, isReprint, REPRINT_BADGE, parse, addDays, diffDays, isWeekend, nextWorkday, weekStart, fmtShort, fmtDay, fmtLong, money, moneyK, esc, lab, jobStage, itemStage, mainLine, person, bucket, BUCKET_NAMES, ICONS, dueBadge, load, stageList, scanPill, tip };
 })();

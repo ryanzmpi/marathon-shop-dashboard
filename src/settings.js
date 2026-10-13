@@ -13,6 +13,9 @@ const DEFAULTS = {
   shippedToday: num(process.env.TARGET_SHIPPED_TODAY, 15833.36),
   shippedMonth: num(process.env.TARGET_SHIPPED_MONTH, 348334),
   shippedYear: num(process.env.TARGET_SHIPPED_YEAR, 3580367),
+  // Press hours available per workday, for the press-time chart
+  pressIndigoHours: num(process.env.PRESS_INDIGO_HOURS, 8),
+  pressRicohHours: num(process.env.PRESS_RICOH_HOURS, 8),
 };
 
 let targets = { ...DEFAULTS };
