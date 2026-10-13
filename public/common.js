@@ -115,11 +115,24 @@ const MSD = (() => {
 
   // Pieces on a job: the quantity of each product item added up. Fee, design, proof, setup,
   // shipping and storage lines are skipped so a rush fee doesn't add "1" to the count.
+  // Stock items (safety pins, stock bibs) are entered as 1 on the product line with the real
+  // count on a stock sub-line, e.g. 267313 "SAFETY PINS - 10 BOXES" → service 612 qty 10.
+  // When a product line's qty is 1 or less, the qty on those sub-lines is used instead.
+  // The service numbers live in labels.qtyFromServices so more can be added without code.
   const NOT_PIECES = /\b(fee|fees|design|proof|proofs|set ?up|shipping|freight|storage|art ?work|rush)\b/i;
+  const QTY_SERVICES_DEFAULT = [592, 593, 596, 612];
+  function lineQty(j, i) {
+    if (i.qty > 1) return i.qty;
+    const list = (L.qtyFromServices || QTY_SERVICES_DEFAULT).map(Number);
+    const sub = (j.items || [])
+      .filter((s) => s.itemNo === i.itemNo && s.serNo > 0 && list.includes(s.serNo) && s.qty > 0)
+      .reduce((t, s) => t + s.qty, 0);
+    return sub || i.qty;
+  }
   function jobQty(j) {
     return (j.items || [])
       .filter((i) => i.serNo === 0 && i.qty > 0 && !NOT_PIECES.test(i.description || ''))
-      .reduce((t, i) => t + i.qty, 0);
+      .reduce((t, i) => t + lineQty(j, i), 0);
   }
   const fmtQty = (n) => (n ? Math.round(n).toLocaleString('en-US') : '—');
 
