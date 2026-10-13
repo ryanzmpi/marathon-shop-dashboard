@@ -60,6 +60,17 @@
   .tv-stage .l { color: var(--text-2); font-size: .95em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .tv-stage .v { font-size: 2em; font-weight: 700; font-variant-numeric: tabular-nums; }
   .tv-head .scan-pill { font-size: .75em; }
+  .tv-job .qty { color: var(--text); font-weight: 650; font-variant-numeric: tabular-nums; flex-shrink: 0; }
+  .tv-job .qty small { color: var(--muted); font-weight: 500; font-size: .85em; }
+  .tv-job .qty-side { display: none; }
+  /* horizontal screens: quantity moves to the right edge under the CSR, so the stage stays visible */
+  @media (orientation: landscape) {
+    .tv-job { grid-template-areas: "no t csr" "no m qtys"; }
+    .tv-job .csr { grid-row: 1; align-self: end; }
+    .tv-job .m .qty { display: none; }
+    .tv-job .qty-side { display: block; grid-area: qtys; justify-self: end; align-self: start; font-weight: 650; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .tv-job .qty-side small { color: var(--muted); font-weight: 500; font-size: .85em; }
+  }
   .tv-kpi .v .of { font-size: .5em; font-weight: 600; color: var(--text-2); margin-left: .1em; }
   .tv-job.reprint { background: var(--critical-soft); box-shadow: inset .4em 0 0 var(--critical); }
   .tv-job .nb { font-weight: 700; color: var(--text); background: var(--accent-soft); border-radius: 6px; padding: 0 .45em; }

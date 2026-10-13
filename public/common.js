@@ -113,6 +113,16 @@ const MSD = (() => {
   // Dollar figures use the job total (incl. discounts, shipping, tax); older cached records fall back to subtotal.
   const amount = (j) => (j.total ?? j.subtotal ?? 0);
 
+  // Pieces on a job: the quantity of each product item added up. Fee, design, proof, setup,
+  // shipping and storage lines are skipped so a rush fee doesn't add "1" to the count.
+  const NOT_PIECES = /\b(fee|fees|design|proof|proofs|set ?up|shipping|freight|storage|art ?work|rush)\b/i;
+  function jobQty(j) {
+    return (j.items || [])
+      .filter((i) => i.serNo === 0 && i.qty > 0 && !NOT_PIECES.test(i.description || ''))
+      .reduce((t, i) => t + i.qty, 0);
+  }
+  const fmtQty = (n) => (n ? Math.round(n).toLocaleString('en-US') : '—');
+
   // Any job with "reprint" in its title gets flagged red everywhere.
   const isReprint = (j) => /reprint/i.test(j.title || '');
   const REPRINT_BADGE = '<span class="badge reprint">Reprint</span> ';
@@ -250,5 +260,5 @@ const MSD = (() => {
     tipEl.style.left = x + 'px'; tipEl.style.top = y + 'px';
   }
 
-  return { renderGauges, gaugeSvg, jobsDueOn, dueTodayFraction, stageColor, stageChip, ignored, stage, stageCode, amount, prevWorkday, workdayOf, workdayBefore, needBy, needByText, cmpNeedBy, cmpDueThenNB, isReprint, REPRINT_BADGE, parse, addDays, diffDays, isWeekend, nextWorkday, weekStart, fmtShort, fmtDay, fmtLong, money, moneyK, esc, lab, jobStage, itemStage, mainLine, person, bucket, BUCKET_NAMES, ICONS, dueBadge, load, stageList, scanPill, tip };
+  return { jobQty, fmtQty, renderGauges, gaugeSvg, jobsDueOn, dueTodayFraction, stageColor, stageChip, ignored, stage, stageCode, amount, prevWorkday, workdayOf, workdayBefore, needBy, needByText, cmpNeedBy, cmpDueThenNB, isReprint, REPRINT_BADGE, parse, addDays, diffDays, isWeekend, nextWorkday, weekStart, fmtShort, fmtDay, fmtLong, money, moneyK, esc, lab, jobStage, itemStage, mainLine, person, bucket, BUCKET_NAMES, ICONS, dueBadge, load, stageList, scanPill, tip };
 })();

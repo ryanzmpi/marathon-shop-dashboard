@@ -20,10 +20,12 @@
       <div class="m">
         ${M.needBy(j) ? `<span class="nb">NB ${M.fmtShort(M.needBy(j))}</span>` : `<span class="nb none">${M.esc(M.needByText(j)) || 'No NB'}</span>`}
         ${lateBy ? `<span class="lateby">${lateBy}d late</span>` : ''}
+        ${M.jobQty(j) ? `<span class="qty">${M.fmtQty(M.jobQty(j))}<small> pcs</small></span>` : ''}
         <span class="cust">${M.esc(j.customer || '')}</span>
         ${M.stageChip(stageOf(j))}
       </div>
       ${j.csrNo ? `<div class="csr" title="CSR">${CSR_ICON}<span>${M.esc(M.person('csr', j.csrNo))}</span></div>` : ''}
+      ${M.jobQty(j) ? `<div class="qty-side">${M.fmtQty(M.jobQty(j))}<small> pcs</small></div>` : ''}
     </div>`;
   }
 

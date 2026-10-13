@@ -135,6 +135,7 @@
     { key: 'due', label: 'Due', val: (j) => j.dateDue || '9999' },
     { key: 'nb', label: 'Need by', val: (j) => M.needBy(j) || '' },
     { key: 'title', label: 'Customer / title', val: (j) => (j.customer || '').toLowerCase() },
+    { key: 'qty', label: 'Qty', val: (j) => M.jobQty(j), right: true },
     { key: 'stage', label: 'Stage', val: (j) => M.stageCode(j) ?? 999 },
     { key: 'csr', label: 'CSR', val: (j) => M.person('csr', j.csrNo) },
     { key: 'amt', label: 'Amount', val: (j) => M.amount(j), right: true },
@@ -177,12 +178,13 @@
         <td><span class="due ${b === 'late' || b === 'today' ? b : ''}">${M.fmtDay(j.dateDue)}</span> ${M.dueBadge(j, today)}</td>
         <td class="nb-cell">${M.needBy(j) ? `<b>${M.fmtDay(M.needBy(j))}</b>` : `<span class="muted">${M.esc(M.needByText(j)) || '—'}</span>`}</td>
         <td class="title"><div>${rp ? M.REPRINT_BADGE : ''}${M.esc(j.title)}</div><div class="cust">${M.esc(j.customer)}</div></td>
+        <td class="num right">${M.fmtQty(M.jobQty(j))}</td>
         <td>${M.stageChip(stageOf(j))}</td>
         <td>${M.esc(M.person('csr', j.csrNo))}</td>
         <td class="num right">${M.money(M.amount(j))}</td>
       </tr>`;
       return tr + (expanded.has(j.jobNo) ? detail(j) : '');
-    }).join('') || `<tr><td colspan="7" class="hint" style="padding:20px">No jobs match.</td></tr>`;
+    }).join('') || `<tr><td colspan="8" class="hint" style="padding:20px">No jobs match.</td></tr>`;
   }
 
   function detail(j) {
@@ -190,7 +192,7 @@
       const what = i.serNo === 0 ? `<b>${M.esc(i.description || 'Item ' + i.itemNo)}</b>${i.qty ? ' · qty ' + i.qty.toLocaleString() : ''}` : `${M.esc(M.lab('service', i.serNo, 'Service'))}${i.empNo ? ' · ' + M.esc(M.person('employee', i.empNo)) : ''}`;
       return `<div class="item"><span class="k">Line ${i.itemNo}${i.subNo ? '.' + i.subNo : ''}</span><span>${what}</span>${i.serNo === 0 && M.ignored(i.status) ? '' : M.stageChip(M.lab('itemStatus', i.status, 'Status'))}</div>`;
     }).join('');
-    return `<tr class="detail"><td colspan="7">
+    return `<tr class="detail"><td colspan="8">
       <div style="display:flex;gap:28px;flex-wrap:wrap;font-size:12px;color:var(--text-2)">
         ${j.buyer ? `<span>Ordered by <b>${M.esc(j.buyer)}</b></span>` : ''}
         ${j.po ? `<span>PO <b>${M.esc(j.po)}</b></span>` : ''}
