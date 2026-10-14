@@ -3,7 +3,7 @@
   const store = { get(k, d) { try { return localStorage.getItem(k) ?? d; } catch { return d; } }, set(k, v) { try { localStorage.setItem(k, v); } catch {} } };
 
   let data = null;
-  const f = { q: '', bucket: 'all', stage: '', csr: '', date: '' };
+  const f = { q: '', bucket: 'all', stage: '', csr: '', via: '', date: '' };
   let sort = { key: 'due', dir: 1 };
   const expanded = new Set();
 
@@ -136,6 +136,7 @@
     { key: 'nb', label: 'Need by', val: (j) => M.needBy(j) || '' },
     { key: 'title', label: 'Customer / title', val: (j) => (j.customer || '').toLowerCase() },
     { key: 'qty', label: 'Qty', val: (j) => M.jobQty(j), right: true },
+    { key: 'via', label: 'Ship via', val: (j) => M.shipVia(j).toLowerCase() || '~' },
     { key: 'stage', label: 'Stage', val: (j) => M.stageCode(j) ?? 999 },
     { key: 'csr', label: 'CSR', val: (j) => M.person('csr', j.csrNo) },
     { key: 'amt', label: 'Amount', val: (j) => M.amount(j), right: true },
@@ -151,6 +152,7 @@
       + (f.date ? `<button class="chip" data-b="clear-date" aria-pressed="true">Due ${M.fmtDay(f.date)} ✕</button>` : '');
     fillSelect($('fStage'), 'Stage', M.stageList(open).map((s) => s[0]), f.stage);
     fillSelect($('fCsr'), 'CSR', [...new Set(open.map((j) => M.person('csr', j.csrNo)))].sort(), f.csr);
+    fillSelect($('fVia'), 'Ship via', [...new Set(open.map((j) => M.shipVia(j)).filter(Boolean))].sort(), f.via);
 
     const q = f.q.trim().toLowerCase();
     let rows = open.filter((j) =>
@@ -158,7 +160,8 @@
       (!f.date || (j.dateDue && M.workdayOf(j.dateDue) === f.date)) &&
       (!f.stage || stageOf(j) === f.stage) &&
       (!f.csr || M.person('csr', j.csrNo) === f.csr) &&
-      (!q || [j.jobNo, j.title, j.customer, j.po, j.buyer, j.shipTo].join(' ').toLowerCase().includes(q)));
+      (!f.via || M.shipVia(j) === f.via) &&
+      (!q || [j.jobNo, j.title, j.customer, j.po, j.buyer, j.shipTo, M.shipVia(j)].join(' ').toLowerCase().includes(q)));
     const col = COLS.find((c) => c.key === sort.key);
     rows.sort((a, b) => {
       // Need-by column: no NB first, then by date, then due date.
@@ -179,12 +182,13 @@
         <td class="nb-cell">${M.needBy(j) ? `<b>${M.fmtDay(M.needBy(j))}</b>` : `<span class="muted">${M.esc(M.needByText(j)) || '—'}</span>`}</td>
         <td class="title"><div>${rp ? M.REPRINT_BADGE : ''}${M.esc(j.title)}</div><div class="cust">${M.esc(j.customer)}</div></td>
         <td class="num right">${M.fmtQty(M.jobQty(j))}</td>
+        <td class="via">${M.esc(M.shipVia(j)) || '<span class="muted">—</span>'}</td>
         <td>${M.stageChip(stageOf(j))}</td>
         <td>${M.esc(M.person('csr', j.csrNo))}</td>
         <td class="num right">${M.money(M.amount(j))}</td>
       </tr>`;
       return tr + (expanded.has(j.jobNo) ? detail(j) : '');
-    }).join('') || `<tr><td colspan="8" class="hint" style="padding:20px">No jobs match.</td></tr>`;
+    }).join('') || `<tr><td colspan="9" class="hint" style="padding:20px">No jobs match.</td></tr>`;
   }
 
   function detail(j) {
@@ -192,7 +196,7 @@
       const what = i.serNo === 0 ? `<b>${M.esc(i.description || 'Item ' + i.itemNo)}</b>${i.qty ? ' · qty ' + i.qty.toLocaleString() : ''}` : `${M.esc(M.lab('service', i.serNo, 'Service'))}${i.empNo ? ' · ' + M.esc(M.person('employee', i.empNo)) : ''}`;
       return `<div class="item"><span class="k">Line ${i.itemNo}${i.subNo ? '.' + i.subNo : ''}</span><span>${what}</span>${i.serNo === 0 && M.ignored(i.status) ? '' : M.stageChip(M.lab('itemStatus', i.status, 'Status'))}</div>`;
     }).join('');
-    return `<tr class="detail"><td colspan="8">
+    return `<tr class="detail"><td colspan="9">
       <div style="display:flex;gap:28px;flex-wrap:wrap;font-size:12px;color:var(--text-2)">
         ${j.buyer ? `<span>Ordered by <b>${M.esc(j.buyer)}</b></span>` : ''}
         ${j.po ? `<span>PO <b>${M.esc(j.po)}</b></span>` : ''}
@@ -237,6 +241,7 @@
   $('q').addEventListener('input', (e) => { f.q = e.target.value; render(); });
   $('fStage').addEventListener('change', (e) => { f.stage = e.target.value; render(); });
   $('fCsr').addEventListener('change', (e) => { f.csr = e.target.value; render(); });
+  $('fVia').addEventListener('change', (e) => { f.via = e.target.value; render(); });
 
   async function refresh() {
     try { data = await M.load(); render(); }

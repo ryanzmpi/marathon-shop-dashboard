@@ -40,6 +40,7 @@ function xml(j) {
 \t\t\t<Title>${j.title.replace(/&/g, '&amp;')}</Title>
 \t\t\t<Status>${j.status}</Status>
 \t\t\t<CSRNo>${j.csr}</CSRNo>
+\t\t\t<ViaDue>${[21, 21, 21, 17, 22, 0, 12][j.jobNo % 7]}</ViaDue>
 \t\t\t<SRepNo>${j.rep}</SRepNo>
 \t\t\t<CusNo>1234</CusNo>
 \t\t\t<PO>PO ${j.jobNo % 9973}</PO>

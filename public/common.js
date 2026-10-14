@@ -29,6 +29,8 @@ const MSD = (() => {
     const v = L[group] && L[group][String(code)];
     return v || (prefix ? `${prefix} ${code}` : String(code));
   };
+  // Ship method name; Printer's Plan marks retired methods with a leading '~', which is dropped here.
+  const shipVia = (j) => (j.shipVia == null ? '' : lab('shipVia', j.shipVia, 'Via').replace(/^~\s*/, ''));
   const jobStage = (j) => lab('jobStatus', j.status, 'Status');
   const mainLine = (j) => (j.items || []).find((i) => i.serNo === 0) || null;
   const itemStage = (j) => { const m = mainLine(j); return m ? lab('itemStatus', m.status, 'Item status') : '—'; };
@@ -363,5 +365,5 @@ const MSD = (() => {
     tipEl.style.left = x + 'px'; tipEl.style.top = y + 'px';
   }
 
-  return { pressMinutes, pressBuckets, renderPress, fmtHrs, jobQty, fmtQty, renderGauges, gaugeSvg, jobsDueOn, dueTodayFraction, stageColor, stageChip, ignored, stage, stageCode, amount, prevWorkday, workdayOf, workdayBefore, needBy, needByText, cmpNeedBy, cmpDueThenNB, isReprint, REPRINT_BADGE, parse, addDays, diffDays, isWeekend, nextWorkday, weekStart, fmtShort, fmtDay, fmtLong, money, moneyK, esc, lab, jobStage, itemStage, mainLine, person, bucket, BUCKET_NAMES, ICONS, dueBadge, load, stageList, scanPill, tip };
+  return { shipVia, pressMinutes, pressBuckets, renderPress, fmtHrs, jobQty, fmtQty, renderGauges, gaugeSvg, jobsDueOn, dueTodayFraction, stageColor, stageChip, ignored, stage, stageCode, amount, prevWorkday, workdayOf, workdayBefore, needBy, needByText, cmpNeedBy, cmpDueThenNB, isReprint, REPRINT_BADGE, parse, addDays, diffDays, isWeekend, nextWorkday, weekStart, fmtShort, fmtDay, fmtLong, money, moneyK, esc, lab, jobStage, itemStage, mainLine, person, bucket, BUCKET_NAMES, ICONS, dueBadge, load, stageList, scanPill, tip };
 })();

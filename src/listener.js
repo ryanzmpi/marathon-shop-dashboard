@@ -109,6 +109,7 @@ function parseJob(xml) {
     dateIn: day(tag(j, 'DateIn')),
     dateDue: day(tag(j, 'DateDue')),
     timeDue: tag(j, 'TimeDue'),
+    shipVia: tag(j, 'ViaDue') === '' ? null : n(tag(j, 'ViaDue')), // ship method code; names in labels.shipVia
     proofTime: tag(j, 'ProofTime'),
     dateShipped: day(tag(j, 'DateShipped')),
     subtotal: money(tag(j, 'Subtotal')),

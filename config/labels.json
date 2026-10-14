@@ -1,20 +1,133 @@
 {
   "_help": "Fill in names for Printer's Plan codes. Anything left out shows as its number (e.g. 'Status 3'). You can also paste this whole JSON into the LABELS_JSON variable in Railway instead of editing this file.",
   "jobStatus": {},
-  "itemStatus": {"4": "Misc", "5": "Not Approved", "6": "Pre Press", "8": "Press", "9": "Production", "12": "Stock", "13": "Misc", "14": "Wide Format", "16": "Production", "17": "Stock"},
-  "csr": {"101": "Shawn", "102": "Connor", "103": "Anthony", "104": "Ryan", "105": "Jen"},
+  "itemStatus": {
+    "4": "Misc",
+    "5": "Not Approved",
+    "6": "Pre Press",
+    "8": "Press",
+    "9": "Production",
+    "12": "Stock",
+    "13": "Misc",
+    "14": "Wide Format",
+    "16": "Production",
+    "17": "Stock"
+  },
+  "csr": {
+    "101": "Shawn",
+    "102": "Connor",
+    "103": "Anthony",
+    "104": "Ryan",
+    "105": "Jen"
+  },
   "salesRep": {},
   "employee": {},
   "service": {},
   "ignoreItemStatuses": [],
-  "qtyFromServices": [592, 593, 596, 612],
-  "presses": [
-    {"name": "Indigo", "services": [574], "color": "#8C7BFF", "hoursKey": "pressIndigoHours"},
-    {"name": "Ricoh", "services": [580], "color": "#2EC4B6", "hoursKey": "pressRicohHours"},
-    {"name": "Konica", "services": [744], "color": "#F5A524"}
+  "qtyFromServices": [
+    592,
+    593,
+    596,
+    612
   ],
-  "pressPendingStatuses": [5, 6, 8],
-  "stageOrder": ["Not Approved", "Pre Press", "Press", "Production", "Wide Format", "Stock", "Misc"],
-  "stageColors": {"Not Approved": "#FF0000", "Pre Press": "#FFFF00", "Press": "#30C5FF", "Production": "#FF793B", "Wide Format": "#1BFC06", "Stock": "#FA3BF0", "Misc": "#C8C8C8"},
-  "hiddenJobStatuses": []
+  "presses": [
+    {
+      "name": "Indigo",
+      "services": [
+        574
+      ],
+      "color": "#8C7BFF",
+      "hoursKey": "pressIndigoHours"
+    },
+    {
+      "name": "Ricoh",
+      "services": [
+        580
+      ],
+      "color": "#2EC4B6",
+      "hoursKey": "pressRicohHours"
+    },
+    {
+      "name": "Konica",
+      "services": [
+        744
+      ],
+      "color": "#F5A524"
+    }
+  ],
+  "pressPendingStatuses": [
+    5,
+    6,
+    8
+  ],
+  "stageOrder": [
+    "Not Approved",
+    "Pre Press",
+    "Press",
+    "Production",
+    "Wide Format",
+    "Stock",
+    "Misc"
+  ],
+  "stageColors": {
+    "Not Approved": "#FF0000",
+    "Pre Press": "#FFFF00",
+    "Press": "#30C5FF",
+    "Production": "#FF793B",
+    "Wide Format": "#1BFC06",
+    "Stock": "#FA3BF0",
+    "Misc": "#C8C8C8"
+  },
+  "hiddenJobStatuses": [],
+  "shipVia": {
+    "0": "Customer Pickup",
+    "1": "Courier",
+    "2": "UPS",
+    "3": "FedEx Express Saver",
+    "4": "~FedEx 1st Over",
+    "5": "~FedEx 1st Over (Sat",
+    "6": "FedEx Ground",
+    "7": "FedEx Ground Home",
+    "8": "FedEx Intl Eco",
+    "9": "FedEx Intl First",
+    "10": "FedEx Intl Priority",
+    "11": "FedEx One Rate Env",
+    "12": "FedEx One Rate Med",
+    "13": "FedEx One Rate Small",
+    "14": "FedEx Pri Overnight",
+    "15": "FedEx Pri Overnight",
+    "16": "FedEx Std Overnight",
+    "17": "UPS 2nd Day Air",
+    "18": "UPS 2nd Day Air Sat",
+    "19": "UPS 2nd Day Air A.M.",
+    "20": "UPS 3 Day",
+    "21": "UPS Ground",
+    "22": "UPS Next Day Air",
+    "23": "UPS Next Day Env",
+    "24": "UPS Next Day Sat",
+    "25": "UPS Next Day Early",
+    "26": "UPS Next Day Early S",
+    "27": "UPS Next Day Saver",
+    "28": "UPS Saver (Intl)",
+    "29": "UPS Std to Canada",
+    "30": "UPS Intl Expedited",
+    "31": "UPS Intl Express",
+    "32": "UPS Intl Exp Plus",
+    "33": "UPS Intl Saver",
+    "34": "~USPS - LYNNPRO",
+    "35": "USPS First Class",
+    "36": "Priority Mail",
+    "37": "FedEx 2Day",
+    "38": "DHL Express WW",
+    "39": "FedEx Intl Connect",
+    "40": "USPS Ground Adv",
+    "41": "USPS Priority Expres",
+    "42": "Priority Mail Expres",
+    "43": "USPS EDDM",
+    "44": "USPS Bulk Mailing",
+    "45": "Install",
+    "46": "Email",
+    "47": "Vendor",
+    "48": "USPS Global Standard"
+  }
 }
