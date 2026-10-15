@@ -98,6 +98,16 @@ const MSD = (() => {
     const m = /\bNB\b[ \t:]*([^\r\n|]{0,12})/i.exec(j.workOrderNote || '');
     return m && m[1].trim() ? 'NB ' + m[1].trim() : '';
   }
+  // Due-today jobs whose Need By is today or the next workday (or already past) get flagged.
+  // Returns the label for the flag, or '' when the job isn't one of them.
+  function nbHot(j, today) {
+    const nb = needBy(j);
+    if (!nb || j.dateDue !== today || nb > nextWorkday(today)) return '';
+    if (nb < today) return 'Needed ' + fmtShort(nb);
+    if (nb === today) return 'Need today';
+    return nb === addDays(today, 1) ? 'Need tomorrow' : 'Need ' + fmtDay(nb).split(' ')[0];
+  }
+  const NB_HOT_ICON = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M9.2 1 3 9.2h4.3L6.4 15l6.6-8.6H8.6z" fill="currentColor"/></svg>';
   // Jobs with no NB date come first, then earliest NB date.
   function cmpNeedBy(a, b) {
     const x = needBy(a), y = needBy(b);
@@ -365,5 +375,5 @@ const MSD = (() => {
     tipEl.style.left = x + 'px'; tipEl.style.top = y + 'px';
   }
 
-  return { shipVia, pressMinutes, pressBuckets, renderPress, fmtHrs, jobQty, fmtQty, renderGauges, gaugeSvg, jobsDueOn, dueTodayFraction, stageColor, stageChip, ignored, stage, stageCode, amount, prevWorkday, workdayOf, workdayBefore, needBy, needByText, cmpNeedBy, cmpDueThenNB, isReprint, REPRINT_BADGE, parse, addDays, diffDays, isWeekend, nextWorkday, weekStart, fmtShort, fmtDay, fmtLong, money, moneyK, esc, lab, jobStage, itemStage, mainLine, person, bucket, BUCKET_NAMES, ICONS, dueBadge, load, stageList, scanPill, tip };
+  return { nbHot, NB_HOT_ICON, shipVia, pressMinutes, pressBuckets, renderPress, fmtHrs, jobQty, fmtQty, renderGauges, gaugeSvg, jobsDueOn, dueTodayFraction, stageColor, stageChip, ignored, stage, stageCode, amount, prevWorkday, workdayOf, workdayBefore, needBy, needByText, cmpNeedBy, cmpDueThenNB, isReprint, REPRINT_BADGE, parse, addDays, diffDays, isWeekend, nextWorkday, weekStart, fmtShort, fmtDay, fmtLong, money, moneyK, esc, lab, jobStage, itemStage, mainLine, person, bucket, BUCKET_NAMES, ICONS, dueBadge, load, stageList, scanPill, tip };
 })();

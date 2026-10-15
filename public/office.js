@@ -176,10 +176,11 @@
     $('rows').innerHTML = rows.map((j) => {
       const b = M.bucket(j, today);
       const rp = M.isReprint(j);
-      const tr = `<tr class="job${rp ? ' reprint' : ''}" data-j="${j.jobNo}">
+      const hot = M.nbHot(j, today);
+      const tr = `<tr class="job${rp ? ' reprint' : ''}${hot ? ' nb-hot' : ''}" data-j="${j.jobNo}">
         <td class="num">${j.jobNo}</td>
         <td><span class="due ${b === 'late' || b === 'today' ? b : ''}">${M.fmtDay(j.dateDue)}</span> ${M.dueBadge(j, today)}</td>
-        <td class="nb-cell">${M.needBy(j) ? `<b>${M.fmtDay(M.needBy(j))}</b>` : `<span class="muted">${M.esc(M.needByText(j)) || '—'}</span>`}</td>
+        <td class="nb-cell">${hot ? `<span class="nb-flag">${M.NB_HOT_ICON}${hot}</span>` : M.needBy(j) ? `<b>${M.fmtDay(M.needBy(j))}</b>` : `<span class="muted">${M.esc(M.needByText(j)) || '—'}</span>`}</td>
         <td class="title"><div>${rp ? M.REPRINT_BADGE : ''}${M.esc(j.title)}</div><div class="cust">${M.esc(j.customer)}</div></td>
         <td class="num right">${M.fmtQty(M.jobQty(j))}</td>
         <td class="via">${M.esc(M.shipVia(j)) || '<span class="muted">—</span>'}</td>

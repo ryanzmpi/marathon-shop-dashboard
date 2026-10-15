@@ -14,11 +14,12 @@
   function jobRow(j, today, showLate) {
     const lateBy = showLate ? -M.diffDays(j.dateDue, today) : 0;
     const rp = M.isReprint(j);
-    return `<div class="tv-job${rp ? ' reprint' : ''}">
+    const hot = M.nbHot(j, today);
+    return `<div class="tv-job${rp ? ' reprint' : ''}${hot ? ' nb-hot' : ''}">
       <div class="no">${j.jobNo}</div>
       <div class="t">${rp ? M.REPRINT_BADGE : ''}${M.esc(j.title || '(no title)')}</div>
       <div class="m">
-        ${M.needBy(j) ? `<span class="nb">NB ${M.fmtShort(M.needBy(j))}</span>` : `<span class="nb none">${M.esc(M.needByText(j)) || 'No NB'}</span>`}
+        ${hot ? `<span class="nb hot">${M.NB_HOT_ICON}${hot}</span>` : M.needBy(j) ? `<span class="nb">NB ${M.fmtShort(M.needBy(j))}</span>` : `<span class="nb none">${M.esc(M.needByText(j)) || 'No NB'}</span>`}
         ${lateBy ? `<span class="lateby">${lateBy}d late</span>` : ''}
         ${M.jobQty(j) ? `<span class="qty">${M.fmtQty(M.jobQty(j))}<small> pcs</small></span>` : ''}
         <span class="cust">${M.esc(j.customer || '')}</span>

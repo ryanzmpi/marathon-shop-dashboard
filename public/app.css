@@ -174,8 +174,14 @@ td .cust { color: var(--text-2); font-size: 13.5px; }
 .badge { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 600; padding: 1px 7px; border-radius: 999px; }
 .badge.late { background: var(--critical-soft); color: var(--critical-ink); }
 .badge.today { background: var(--warning-soft); color: var(--warning-ink); }
+/* due today with a Need By of today/tomorrow: amber row + labelled flag */
+tr.job.nb-hot td { background: var(--warning-soft); }
+tr.job.nb-hot td:first-child { box-shadow: inset 4px 0 0 var(--warning); }
+tr.job.reprint.nb-hot td:first-child { box-shadow: inset 4px 0 0 var(--critical), inset 8px 0 0 var(--warning); }
+.nb-flag { display: inline-flex; align-items: center; gap: 4px; background: var(--warning); color: #1a1300; font-weight: 700; font-size: 12px; border-radius: 6px; padding: 2px 8px; white-space: nowrap; }
+.nb-flag svg, .tv-job .nb.hot svg { width: .95em; height: .95em; }
 /* reprints: whole row flagged red, plus a label so it isn't colour alone */
-tr.job.reprint td { background: var(--critical-soft); }
+tr.job.reprint td, tr.job.reprint.nb-hot td { background: var(--critical-soft); }
 tr.job.reprint td:first-child { box-shadow: inset 4px 0 0 var(--critical); }
 tr.job.reprint:hover td { background: var(--critical-soft); filter: brightness(0.97); }
 .badge.reprint { background: var(--critical); color: #fff; margin-right: 6px; vertical-align: 1px; }
