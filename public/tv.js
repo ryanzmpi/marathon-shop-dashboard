@@ -19,11 +19,11 @@
       <div class="no">${j.jobNo}</div>
       <div class="t">${rp ? M.REPRINT_BADGE : ''}${M.esc(j.title || '(no title)')}</div>
       <div class="m">
-        ${hot ? `<span class="nb hot">${M.NB_HOT_ICON}${hot}</span>` : M.needBy(j) ? `<span class="nb">NB ${M.fmtShort(M.needBy(j))}</span>` : `<span class="nb none">${M.esc(M.needByText(j)) || 'No NB'}</span>`}
+        ${hot ? `<span class="nb hot">${M.NB_HOT_ICON}<span class="full">${hot}</span><span class="short">${M.nbHotShort(hot)}</span></span>` : M.needBy(j) ? `<span class="nb">NB ${M.fmtShort(M.needBy(j))}</span>` : `<span class="nb none">${M.esc(M.needByText(j)) || 'No NB'}</span>`}
         ${lateBy ? `<span class="lateby">${lateBy}d late</span>` : ''}
         ${M.jobQty(j) ? `<span class="qty">${M.fmtQty(M.jobQty(j))}<small> pcs</small></span>` : ''}
         <span class="cust">${M.esc(j.customer || '')}</span>
-        ${M.stageChip(stageOf(j))}
+        ${M.jobStageChip(j)}
       </div>
       ${j.csrNo ? `<div class="csr" title="CSR">${CSR_ICON}<span>${M.esc(M.person('csr', j.csrNo))}</span></div>` : ''}
       ${M.jobQty(j) ? `<div class="qty-side">${M.fmtQty(M.jobQty(j))}<small> pcs</small></div>` : ''}

@@ -184,7 +184,7 @@
         <td class="title"><div>${rp ? M.REPRINT_BADGE : ''}${M.esc(j.title)}</div><div class="cust">${M.esc(j.customer)}</div></td>
         <td class="num right">${M.fmtQty(M.jobQty(j))}</td>
         <td class="via">${M.esc(M.shipVia(j)) || '<span class="muted">—</span>'}</td>
-        <td>${M.stageChip(stageOf(j))}</td>
+        <td>${M.jobStageChip(j)}</td>
         <td>${M.esc(M.person('csr', j.csrNo))}</td>
         <td class="num right">${M.money(M.amount(j))}</td>
       </tr>`;

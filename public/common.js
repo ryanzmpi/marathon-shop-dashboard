@@ -107,6 +107,8 @@ const MSD = (() => {
     if (nb === today) return 'Need today';
     return nb === addDays(today, 1) ? 'Need tomorrow' : 'Need ' + fmtDay(nb).split(' ')[0];
   }
+  // Shorter form for narrow screens: "Today", "Tmrw", "Mon", "NB 10/14".
+  const nbHotShort = (label) => label.replace('Need today', 'Today').replace('Need tomorrow', 'Tmrw').replace(/^Needed /, 'NB ').replace(/^Need /, '');
   const NB_HOT_ICON = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M9.2 1 3 9.2h4.3L6.4 15l6.6-8.6H8.6z" fill="currentColor"/></svg>';
   // Jobs with no NB date come first, then earliest NB date.
   function cmpNeedBy(a, b) {
@@ -328,11 +330,34 @@ const MSD = (() => {
   // Stage colours come from labels.stageColors (by stage name). Chips use dark text since
   // the colours are bright.
   const stageColor = (name) => (L.stageColors || {})[name] || '';
-  function stageChip(name) {
+  function stageChip(name, extra) {
     if (!name) return '';
     const c = stageColor(name);
-    return `<span class="stage${c ? ' coloured' : ''}"${c ? ` style="background:${esc(c)}"` : ''}>${esc(name)}</span>`;
+    return `<span class="stage${c ? ' coloured' : ''}"${c ? ` style="background:${esc(c)}"` : ''}>${esc(name)}${extra ? `<span class="stage-x"> · ${esc(extra)}</span>` : ''}</span>`;
   }
+  // Which press(es) a job is set up for: the press service lines (labels.presses) under the
+  // product lines that are at the job's current stage, falling back to any line on the job.
+  function jobPresses(j) {
+    const items = j.items || [];
+    const code = stageCode(j);
+    const pick = (mains) => presses().filter((p) => {
+      const svcs = p.services.map(Number);
+      return items.some((s) => s.serNo > 0 && svcs.includes(s.serNo) && mains.some((m) => m.itemNo === s.itemNo));
+    }).map((p) => p.name);
+    const mains = items.filter((i) => i.serNo === 0);
+    const atStage = pick(mains.filter((m) => m.status === code));
+    return atStage.length ? atStage : pick(mains);
+  }
+  // The stage chip for a job; jobs in Press also name the press, e.g. "Press · Indigo".
+  function jobStageChip(j) {
+    const name = stage(j);
+    const ps = name === 'Press' ? jobPresses(j) : [];
+    if (ps.length < 2) return stageChip(name, ps[0] || '');
+    // Two or more presses: narrow TV columns drop the word "Press" (the chip colour still says it).
+    const c = stageColor(name);
+    return `<span class="stage multi${c ? ' coloured' : ''}"${c ? ` style="background:${esc(c)}"` : ''}><span class="stage-base">${esc(name)} · </span><span class="stage-x">${esc(ps.join(' + '))}</span></span>`;
+  }
+
 
   // Stages present in the data as [name, count, code], in labels.stageOrder order if given,
   // otherwise by status number.
@@ -375,5 +400,5 @@ const MSD = (() => {
     tipEl.style.left = x + 'px'; tipEl.style.top = y + 'px';
   }
 
-  return { nbHot, NB_HOT_ICON, shipVia, pressMinutes, pressBuckets, renderPress, fmtHrs, jobQty, fmtQty, renderGauges, gaugeSvg, jobsDueOn, dueTodayFraction, stageColor, stageChip, ignored, stage, stageCode, amount, prevWorkday, workdayOf, workdayBefore, needBy, needByText, cmpNeedBy, cmpDueThenNB, isReprint, REPRINT_BADGE, parse, addDays, diffDays, isWeekend, nextWorkday, weekStart, fmtShort, fmtDay, fmtLong, money, moneyK, esc, lab, jobStage, itemStage, mainLine, person, bucket, BUCKET_NAMES, ICONS, dueBadge, load, stageList, scanPill, tip };
+  return { nbHotShort, jobPresses, jobStageChip, nbHot, NB_HOT_ICON, shipVia, pressMinutes, pressBuckets, renderPress, fmtHrs, jobQty, fmtQty, renderGauges, gaugeSvg, jobsDueOn, dueTodayFraction, stageColor, stageChip, ignored, stage, stageCode, amount, prevWorkday, workdayOf, workdayBefore, needBy, needByText, cmpNeedBy, cmpDueThenNB, isReprint, REPRINT_BADGE, parse, addDays, diffDays, isWeekend, nextWorkday, weekStart, fmtShort, fmtDay, fmtLong, money, moneyK, esc, lab, jobStage, itemStage, mainLine, person, bucket, BUCKET_NAMES, ICONS, dueBadge, load, stageList, scanPill, tip };
 })();

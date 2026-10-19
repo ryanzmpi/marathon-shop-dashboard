@@ -231,3 +231,4 @@ tr.job.reprint:hover td { background: var(--critical-soft); filter: brightness(0
 .pbreak em { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 4px; vertical-align: 0; }
 .pbars + .vlabels, .pbars ~ .pbreak { gap: 6px; }
 td.via { white-space: nowrap; color: var(--text-2); }
+.stage .stage-x { font-weight: 700; }

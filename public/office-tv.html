@@ -46,7 +46,7 @@
   @media (orientation: landscape) {
     .tv-job { gap: .1em .7em; }
     .tv-job .csr { padding: .15em .55em; font-size: .9em; gap: .3em; }
-    .tv-job .cust { min-width: 2.5em; }
+    .tv-job .cust { min-width: 0; } /* the stage chip wins over the customer name when space runs out */
   }
   .tv-job .no { font-size: 1.35em; font-weight: 700; font-variant-numeric: tabular-nums; }
   .tv-job .t { font-size: 1.15em; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -77,6 +77,8 @@
   .tv-job.nb-hot { background: var(--warning-soft); box-shadow: inset .4em 0 0 var(--warning); }
   .tv-job.reprint.nb-hot { background: var(--critical-soft); box-shadow: inset .4em 0 0 var(--critical), inset .8em 0 0 var(--warning); }
   .tv-job .nb.hot { display: inline-flex; align-items: center; gap: .3em; background: var(--warning); color: #1a1300; }
+  .tv-job .nb.hot .short { display: none; }
+  @media (orientation: landscape) { .tv-job .stage.multi .stage-base { display: none; } .tv-job .nb.hot .full { display: none; } .tv-job .nb.hot .short { display: inline; } }
   .tv-job .nb.none { font-weight: 500; color: var(--muted); background: none; padding: 0; }
   .tv-job .badge.reprint { font-size: .75em; padding: .1em .6em; vertical-align: .15em; }
 
