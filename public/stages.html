@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Stage History</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/app.css">
+<style>
+  .sh { max-width: 1500px; margin: 0 auto; padding: 24px 16px 40px; }
+  .sh-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 18px; margin-bottom: 4px; }
+  .sh-head h1 { font-size: 20px; margin: 0; }
+  .sh-head .spacer { flex: 1; }
+  .lead { color: var(--text-2); margin: 0 0 16px; max-width: 900px; font-size: 13px; line-height: 1.5; }
+  .bar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; margin-bottom: 16px; }
+  .bar label { font-size: 13px; color: var(--text-2); display: flex; align-items: center; gap: 6px; }
+  .bar input[type=date], .bar input[type=search] { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; color: var(--text); padding: 7px 10px; font: inherit; font-size: 13px; color-scheme: dark; }
+  .bar .quick button, .dl { background: var(--surface); border: 1px solid var(--border); color: var(--text); border-radius: 999px; padding: 6px 12px; font: inherit; font-size: 13px; cursor: pointer; text-decoration: none; }
+  .bar .quick button[aria-pressed=true] { background: var(--text); color: var(--bg); }
+  .dl { border-radius: 8px; background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; display: inline-flex; gap: 6px; align-items: center; }
+  .dl.alt { background: var(--surface); color: var(--text); border-color: var(--border); }
+  .tabs { display: flex; gap: 6px; margin: 4px 0 10px; }
+  .tabs button { background: none; border: 0; border-bottom: 2px solid transparent; color: var(--text-2); font: inherit; font-weight: 600; padding: 6px 4px; cursor: pointer; }
+  .tabs button[aria-selected=true] { color: var(--text); border-bottom-color: var(--accent); }
+  td.t, th.t { white-space: nowrap; font-variant-numeric: tabular-nums; }
+  td.h { text-align: right; font-variant-numeric: tabular-nums; }
+  td.h.long { color: var(--warning); font-weight: 700; }
+  .unk { color: var(--muted); }
+  .count { color: var(--muted); font-size: 12px; }
+  .empty { color: var(--muted); padding: 24px 8px; }
+</style>
+</head>
+<body>
+<div class="sh">
+  <div class="sh-head">
+    <h1>Stage history</h1>
+    <span class="count" id="since"></span>
+    <span class="spacer"></span>
+    <a href="/">← Dashboard</a>
+  </div>
+  <p class="lead">The dashboard records when each item's stage changes in Printer's Plan. It checks every open job about once a minute, so each time is when the change was <b>seen</b> and is accurate to about a minute. The events download also has a "Changed after" column, the last time the old stage was seen. The real change happened between the two times. Times are Pacific.</p>
+
+  <div class="bar">
+    <div class="quick" id="quick"></div>
+    <label>From <input type="date" id="from"></label>
+    <label>To <input type="date" id="to"></label>
+    <input type="search" id="q" placeholder="Job #, customer, item…" aria-label="Search">
+    <span class="spacer" style="flex:1"></span>
+    <a class="dl" id="dlSummary" href="#">⬇ Summary (CSV)</a>
+    <a class="dl alt" id="dlEvents" href="#">⬇ All events (CSV)</a>
+  </div>
+
+  <div class="tabs" role="tablist">
+    <button role="tab" id="tabS" aria-selected="true">By item</button>
+    <button role="tab" id="tabE" aria-selected="false">Every change</button>
+    <span class="count" id="n" style="margin-left:auto;align-self:center"></span>
+  </div>
+  <div class="card table-wrap"><table><thead id="th"></thead><tbody id="tb"></tbody></table></div>
+</div>
+<script>
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  let data = null, tab = 'summary';
+  const TZ = 'America/Los_Angeles';
+  const fmt = (iso) => iso ? new Date(iso).toLocaleString('en-US', { timeZone: data?.timeZone || TZ, month: 'numeric', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : '';
+  const hrs = (a, b) => (a && b ? (new Date(b) - new Date(a)) / 3600000 : null);
+  const fmtH = (h) => h == null ? '' : h < 1 ? Math.round(h * 60) + ' min' : h.toFixed(1) + ' h';
+  const csr = (n) => (data.labels.csr || {})[String(n)] || (n ? '#' + n : '');
+  const ymd = (d) => new Intl.DateTimeFormat('en-CA', { timeZone: TZ }).format(d);
+  const addDays = (s, n) => { const d = new Date(s + 'T12:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
+
+  const QUICK = [['Today', 0], ['7 days', 6], ['30 days', 29], ['All', null]];
+  function setRange(days) {
+    const t = ymd(new Date());
+    $('from').value = days == null ? '' : addDays(t, -days);
+    $('to').value = days == null ? '' : t;
+    load();
+  }
+  $('quick').innerHTML = QUICK.map(([l, d]) => `<button data-d="${d}">${l}</button>`).join(' ');
+  $('quick').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) setRange(b.dataset.d === 'null' ? null : +b.dataset.d); });
+  const qs = () => { const p = new URLSearchParams(); if ($('from').value) p.set('from', $('from').value); if ($('to').value) p.set('to', $('to').value); return p.toString() ? '?' + p : ''; };
+
+  async function load() {
+    $('dlSummary').href = '/api/stage-summary.csv' + qs();
+    $('dlEvents').href = '/api/stage-events.csv' + qs();
+    document.querySelectorAll('#quick button').forEach((b) => {
+      const d = b.dataset.d === 'null' ? null : +b.dataset.d, t = ymd(new Date());
+      b.setAttribute('aria-pressed', d == null ? !$('from').value && !$('to').value : $('from').value === addDays(t, -d) && $('to').value === t);
+    });
+    const res = await fetch('/api/stage-history' + qs(), { cache: 'no-store' });
+    if (res.status === 401) { location.href = '/login?next=/stages'; return; }
+    data = await res.json();
+    $('since').textContent = data.since ? `Recording since ${fmt(data.since)} · ${data.count.toLocaleString()} events` : 'No stage changes recorded yet';
+    render();
+  }
+
+  function render() {
+    if (!data) return;
+    const q = $('q').value.trim().toLowerCase();
+    const match = (r) => !q || [r.job, r.customer, r.title, r.description, r.press].join(' ').toLowerCase().includes(q);
+    if (tab === 'summary') {
+      $('th').innerHTML = `<tr><th>Job</th><th>Item</th><th>Customer / title</th><th>Press</th><th class="t">Approved</th><th class="t">Entered Pre Press</th><th class="t">Entered Press</th><th class="t">Left Press</th><th>Pre Press → Press</th><th>In Press stage</th><th>Now</th></tr>`;
+      const rows = data.summary.filter(match).sort((a, b) => (b.lastChangeAt || '').localeCompare(a.lastChangeAt || ''));
+      $('n').textContent = rows.length + ' items';
+      const cell = (iso) => (iso ? fmt(iso) : '<span class="unk">—</span>');
+      $('tb').innerHTML = rows.map((r) => {
+        const pp = hrs(r.prePressAt, r.pressAt), ip = hrs(r.pressAt, r.leftPressAt);
+        return `<tr><td class="num">${r.job}</td><td class="num">${r.item}</td>
+          <td class="title"><div>${esc(r.description || r.title)}</div><div class="cust">${esc(r.customer)}${r.title && r.description && r.title !== r.description ? ' · ' + esc(r.title) : ''}</div></td>
+          <td>${esc(r.press) || '<span class="unk">—</span>'}</td>
+          <td class="t">${cell(r.approvedAt)}</td><td class="t">${cell(r.prePressAt)}</td><td class="t">${cell(r.pressAt)}</td>
+          <td class="t">${r.leftPressAt ? fmt(r.leftPressAt) + ` <span class="unk">→ ${esc(r.leftPressTo)}</span>` : '<span class="unk">—</span>'}</td>
+          <td class="h${pp > 24 ? ' long' : ''}">${fmtH(pp)}</td><td class="h${ip > 24 ? ' long' : ''}">${fmtH(ip)}</td>
+          <td>${esc(r.stage)}${r.sentBack ? `<div class="unk" style="font-size:11px">sent back to Not Approved ${r.sentBack}×</div>` : ''}${r.firstSeenKind === 'first-seen' ? `<div class="unk" style="font-size:11px">first seen ${fmt(r.firstSeenAt)} in ${esc(r.firstStage)}</div>` : ''}</td></tr>`;
+      }).join('') || `<tr><td colspan="11" class="empty">Nothing recorded in this range yet. Changes show up here as they happen.</td></tr>`;
+    } else {
+      const KIND = { change: '', new: 'New job', 'first-seen': 'First seen', 'item-added': 'Item added', shipped: 'Ship date', closed: 'Left open list' };
+      $('th').innerHTML = `<tr><th class="t">Seen at</th><th>Job</th><th>Item</th><th>Customer / title</th><th>From</th><th>To</th><th>Press</th><th>CSR</th></tr>`;
+      const rows = data.events.filter(match).slice().reverse();
+      $('n').textContent = rows.length + ' events' + (data.events.length >= 2000 ? ' (latest 2,000; download for all)' : '');
+      $('tb').innerHTML = rows.map((e) => `<tr><td class="t">${fmt(e.at)}</td><td class="num">${e.job}</td><td class="num">${e.item ?? ''}</td>
+        <td class="title"><div>${esc(e.description || e.title)}</div><div class="cust">${esc(e.customer)}</div></td>
+        <td>${e.kind === 'change' ? esc(e.fromName) : `<span class="unk">${KIND[e.kind] || ''}</span>`}</td><td><b>${esc(e.toName)}</b></td><td>${esc(e.press)}</td><td>${esc(csr(e.csrNo))}</td></tr>`).join('')
+        || `<tr><td colspan="8" class="empty">Nothing recorded in this range yet.</td></tr>`;
+    }
+  }
+  $('tabS').addEventListener('click', () => { tab = 'summary'; $('tabS').setAttribute('aria-selected', true); $('tabE').setAttribute('aria-selected', false); render(); });
+  $('tabE').addEventListener('click', () => { tab = 'events'; $('tabE').setAttribute('aria-selected', true); $('tabS').setAttribute('aria-selected', false); render(); });
+  $('from').addEventListener('change', load); $('to').addEventListener('change', load);
+  $('q').addEventListener('input', render);
+  setRange(6);
+  setInterval(load, 60000);
+</script>
+</body>
+</html>

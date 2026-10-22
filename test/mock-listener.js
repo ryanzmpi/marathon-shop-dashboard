@@ -30,6 +30,14 @@ for (let n = NEWEST - 2200; n <= NEWEST; n++) {
   };
 }
 
+// Every 5th open job walks Not Approved → Pre Press → Press → Production, one step per MOCK_STEP_SECONDS.
+const T0 = Date.now(), STEP = Number(process.env.MOCK_STEP_SECONDS || 0);
+function statusNow(j) {
+  if (!STEP || j.type !== 0 || j.jobNo % 5) return j.itemStatus;
+  const flow = [5, 6, 8, 9];
+  return flow[Math.min(flow.length - 1, Math.floor((Date.now() - T0) / 1000 / STEP + (j.jobNo % 3)) % 6)] ;
+}
+
 function xml(j) {
   return `<job JobID="${j.jobNo - 225000}" JobNo="${j.jobNo}">
 \t<JOB_1>
@@ -76,7 +84,7 @@ Ship by Standard Shipping</WOrderNote>
 \t\t\t<SerNo>0</SerNo>
 \t\t\t<ItemNo>1</ItemNo>
 \t\t\t<SubNo>0</SubNo>
-\t\t\t<Status>${j.itemStatus}</Status>
+\t\t\t<Status>${statusNow(j)}</Status>
 \t\t\t<EmpNo>0</EmpNo>
 \t\t\t<ChargeQty>500</ChargeQty>
 \t\t\t<Price>${j.subtotal}</Price>

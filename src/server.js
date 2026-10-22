@@ -5,6 +5,7 @@ const crypto = require('crypto');
 const cfg = require('./config');
 const scanner = require('./scanner');
 const settings = require('./settings');
+const stagelog = require('./stagelog');
 
 const PUBLIC = path.join(__dirname, '..', 'public');
 const TYPES = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.svg': 'image/svg+xml', '.ico': 'image/x-icon' };
@@ -19,6 +20,7 @@ function loadLabels() {
   return labels;
 }
 const labels = loadLabels();
+stagelog.init(labels);
 
 // ---------- auth: a signed cookie after entering the dashboard password ----------
 const COOKIE = 'msd_session';
@@ -126,6 +128,17 @@ const server = http.createServer(async (req, res) => {
       return send(res, 400, JSON.stringify({ error: e.message }), 'application/json');
     }
   }
+  // Stage history (recorded by the dashboard; see src/stagelog.js). ?from=YYYY-MM-DD&to=YYYY-MM-DD (local dates).
+  if (p.startsWith('/api/stage-')) {
+    const d = (v) => (/^\d{4}-\d{2}-\d{2}$/.test(v || '') ? v : '');
+    const from = d(url.searchParams.get('from')), to = d(url.searchParams.get('to'));
+    const range = { from: from && stagelog.localMidnightIso(from), to: to && stagelog.localMidnightIso(to, 1) };
+    const name = (kind) => `stage-${kind}${from ? '_' + from : ''}${to ? '_to_' + to : ''}.csv`;
+    if (p === '/api/stage-events.csv') return send(res, 200, stagelog.eventsCsv(range), 'text/csv; charset=utf-8', { 'Content-Disposition': `attachment; filename="${name('events')}"` });
+    if (p === '/api/stage-summary.csv') return send(res, 200, stagelog.summaryCsv(range), 'text/csv; charset=utf-8', { 'Content-Disposition': `attachment; filename="${name('summary')}"` });
+    if (p === '/api/stage-history') return send(res, 200, JSON.stringify({ since: stagelog.since(), count: stagelog.count(), timeZone: cfg.timeZone, labels, summary: stagelog.summary(range), events: stagelog.list(range).slice(-2000) }), 'application/json');
+  }
+  if (p === '/stages' || p === '/stages.html') return sendFile(res, 'stages.html');
   if (p === '/settings' || p === '/settings.html') return sendFile(res, 'settings.html');
   if (p === '/' || p === '/index.html') return sendFile(res, 'index.html');
   if (p === '/tv' || p === '/tv.html') return sendFile(res, 'tv.html');

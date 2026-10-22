@@ -10,6 +10,10 @@ A web dashboard showing open jobs from Printer's Plan. It reads job data from th
 - **Ship via** (office view only): each job's ship method in the office table, with a filter. Names come from `shipVia` in `config/labels.json` (codes from Printer's Plan's ship-via list; a leading `~` is dropped).
 - **Need-by flag:** a job due today whose NB date is today, the next workday or already past gets an amber row and a labelled flag ("Need today", "Need tomorrow"), on the office table and both TVs.
 - **Press on the stage chip:** jobs in the Press stage show which press they're set up for, e.g. "Press · Indigo" (from the press service lines; "Indigo + Ricoh" when a job uses both).
+- **Stage history** (`/stages`, linked as "Stage history" on the office view): Printer's Plan only stores each item's current stage, so the dashboard records the time it *sees* each change (about once a minute) from the day this is deployed — there's no history before that. The page shows each item's latest Approved / Entered Pre Press / Entered Press / Left Press times and the hours between, plus every change, and has two downloads for Excel:
+  - **Summary CSV** (`/api/stage-summary.csv?from=YYYY-MM-DD&to=YYYY-MM-DD`): one row per job item with those milestones, the press, and hours Pre Press → Press and in the Press stage. If an item is sent back to Not Approved, the milestones restart and the row counts the send-backs.
+  - **All events CSV** (`/api/stage-events.csv?…`): every change, with "Seen at" and "Changed after" (the last time the old stage was seen; the real change happened between the two).
+  The log is kept in `DATA_DIR/stage-log.jsonl` forever, so **a Railway volume with `DATA_DIR=/data` is required** or the history is lost on every redeploy.
 - **Reprints:** any job with "reprint" in its title is flagged red, with a Reprint label, on both views.
 - **TV view** (`/tv`): a full-screen display for the shop floor (works on vertical and horizontal screens) showing Late, Due today and Due next workday. It refreshes every minute and pages through long lists on its own.
 

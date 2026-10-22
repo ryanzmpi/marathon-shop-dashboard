@@ -9,6 +9,7 @@ const fs = require('fs');
 const path = require('path');
 const cfg = require('./config');
 const { getJob, stats } = require('./listener');
+const stagelog = require('./stagelog');
 
 const STATE_FILE = path.join(cfg.dataDir, 'state.json');
 
@@ -126,7 +127,7 @@ function pruneYtd() {
 // Does this job number exist at all (open or invoiced)? Records what it finds.
 async function probe(jobNo, { recordHistory = true } = {}) {
   const open = await getJob('Order', jobNo);
-  if (open) { state.open[jobNo] = { ...open, seenAt: new Date().toISOString() }; return true; }
+  if (open) { stagelog.observe(open, { isNew: !state.open[jobNo] }); state.open[jobNo] = { ...open, seenAt: new Date().toISOString() }; return true; }
   const hist = await getJob('History', jobNo);
   if (hist) { if (recordHistory) recordInvoiced(hist); return true; }
   return false;
@@ -167,16 +168,16 @@ async function recheckOpen() {
   await Promise.all(nums.map(async (jobNo) => {
     try {
       const job = await getJob('Order', jobNo);
-      if (job) { state.open[jobNo] = { ...job, seenAt: new Date().toISOString() }; return; }
+      if (job) { stagelog.observe(job); state.open[jobNo] = { ...job, seenAt: new Date().toISOString() }; return; }
       // No longer open. Look it up in History *before* removing it, so a failed lookup
       // never makes a job vanish from both lists.
       const hist = await getJob('History', jobNo);
-      if (hist) { recordInvoiced(hist); delete state.open[jobNo]; return; }
+      if (hist) { recordInvoiced(hist); delete state.open[jobNo]; stagelog.closed(jobNo, 'Invoiced'); return; }
       // In neither list (deleted, converted, or mid-invoice in Printer's Plan). Only drop it
       // after it's been missing for 3 checks in a row, in case it reappears.
       const prev = state.open[jobNo];
       prev.missing = (prev.missing || 0) + 1;
-      if (prev.missing >= 3) delete state.open[jobNo];
+      if (prev.missing >= 3) { delete state.open[jobNo]; stagelog.closed(jobNo, 'No longer in Printer\'s Plan'); }
     } catch {
       /* network problem: keep the job as-is and try again next cycle */
     }
@@ -214,7 +215,7 @@ async function runBackfill() {
       await Promise.all(chunk.map(async (jobNo) => {
         try {
           const job = await getJob('Order', jobNo);
-          if (job) { state.open[jobNo] = { ...job, seenAt: new Date().toISOString() }; return; }
+          if (job) { stagelog.observe(job); state.open[jobNo] = { ...job, seenAt: new Date().toISOString() }; return; }
           if (jobNo > bf.to - cfg.historySeedCount) {
             const hist = await getJob('History', jobNo);
             if (hist) recordInvoiced(hist);
