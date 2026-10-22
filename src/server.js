@@ -20,7 +20,7 @@ function loadLabels() {
   return labels;
 }
 const labels = loadLabels();
-stagelog.init(labels);
+stagelog.init(labels, (n) => scanner.jobInfo(n));
 
 // ---------- auth: a signed cookie after entering the dashboard password ----------
 const COOKIE = 'msd_session';
@@ -65,10 +65,10 @@ function sendFile(res, file) {
     send(res, 200, data, TYPES[path.extname(full)] || 'application/octet-stream');
   });
 }
-function readBody(req) {
+function readBody(req, max = 1e4) {
   return new Promise((resolve) => {
     let b = '';
-    req.on('data', (c) => { b += c; if (b.length > 1e4) req.destroy(); });
+    req.on('data', (c) => { b += c; if (b.length > max) req.destroy(); });
     req.on('end', () => resolve(b));
   });
 }
@@ -136,7 +136,19 @@ const server = http.createServer(async (req, res) => {
     const name = (kind) => `stage-${kind}${from ? '_' + from : ''}${to ? '_to_' + to : ''}.csv`;
     if (p === '/api/stage-events.csv') return send(res, 200, stagelog.eventsCsv(range), 'text/csv; charset=utf-8', { 'Content-Disposition': `attachment; filename="${name('events')}"` });
     if (p === '/api/stage-summary.csv') return send(res, 200, stagelog.summaryCsv(range), 'text/csv; charset=utf-8', { 'Content-Disposition': `attachment; filename="${name('summary')}"` });
-    if (p === '/api/stage-history') return send(res, 200, JSON.stringify({ since: stagelog.since(), count: stagelog.count(), timeZone: cfg.timeZone, labels, summary: stagelog.summary(range), events: stagelog.list(range).slice(-2000) }), 'application/json');
+    // Hand-entered dates from Printer's Plan (date only). Saving needs SETTINGS_PIN when it's set.
+    if (p === '/api/stage-manual' && req.method === 'POST') {
+      let body;
+      try { body = JSON.parse(await readBody(req, 2e6)); } catch { return send(res, 400, '{"error":"bad request"}', 'application/json'); }
+      if (cfg.settingsPin && String(body.pin || '') !== cfg.settingsPin) {
+        await new Promise((r) => setTimeout(r, 1000));
+        return send(res, 403, '{"error":"Wrong PIN"}', 'application/json');
+      }
+      if (body.remove) { stagelog.removeManual(String(body.remove)); return send(res, 200, JSON.stringify({ manual: stagelog.listManual() }), 'application/json'); }
+      const result = stagelog.importManual(body.text || '');
+      return send(res, 200, JSON.stringify({ ...result, manual: stagelog.listManual() }), 'application/json');
+    }
+    if (p === '/api/stage-history') return send(res, 200, JSON.stringify({ pinRequired: !!cfg.settingsPin, manual: stagelog.listManual(), since: stagelog.since(), count: stagelog.count(), timeZone: cfg.timeZone, labels, summary: stagelog.summary(range), events: stagelog.list(range).slice(-2000) }), 'application/json');
   }
   if (p === '/stages' || p === '/stages.html') return sendFile(res, 'stages.html');
   if (p === '/settings' || p === '/settings.html') return sendFile(res, 'settings.html');

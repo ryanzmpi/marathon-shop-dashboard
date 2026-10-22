@@ -327,4 +327,10 @@ function snapshot() {
   };
 }
 
-module.exports = { start, snapshot, todayLocal };
+// Basic info for any job we know about (open or recently invoiced), for the stage history.
+function jobInfo(jobNo) {
+  const j = state.open[jobNo] || state.invoiced[jobNo];
+  return j ? { title: j.title, customer: j.customer, csrNo: j.csrNo } : null;
+}
+
+module.exports = { start, snapshot, todayLocal, jobInfo };

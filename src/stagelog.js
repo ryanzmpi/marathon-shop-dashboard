@@ -11,14 +11,21 @@ const cfg = require('./config');
 
 const LOG_FILE = path.join(cfg.dataDir, 'stage-log.jsonl');
 const STATE_FILE = path.join(cfg.dataDir, 'stage-log-state.json');
+// Dates typed in from Printer's Plan for changes the dashboard didn't see (date only, no time).
+const MANUAL_FILE = path.join(cfg.dataDir, 'stage-manual.json');
+const MILESTONES = { approved: 'Approved', prePress: 'Pre Press', press: 'Press', leftPress: 'Left Press' };
+let manual = {}; // "job/item/milestone" -> { job, item (null = whole job), milestone, date: 'YYYY-MM-DD', addedAt }
+let jobInfo = () => null; // jobNo -> { title, customer, csrNo } from the scanner, for jobs with no events
 
 let labels = {};
 let events = []; // all events, oldest first
 // jobNo -> { seenAt, shipped, items: { itemNo: { status, description } }, title, customer, csrNo }
 let last = {};
 
-function init(lbls) {
+function init(lbls, info) {
   labels = lbls || {};
+  if (info) jobInfo = info;
+  try { manual = JSON.parse(fs.readFileSync(MANUAL_FILE, 'utf8')); } catch { manual = {}; }
   try {
     events = fs.readFileSync(LOG_FILE, 'utf8').split('\n').filter(Boolean).map((l) => JSON.parse(l));
   } catch { events = []; }
@@ -126,15 +133,41 @@ function summary({ from, to } = {}) {
     // Items can go backwards (e.g. sent back to Not Approved for a new proof), so the summary keeps
     // the LATEST pass through each stage; a move back clears the later milestones.
     const entered = e.kind === 'change' || e.kind === 'new';
-    if (e.kind === 'change' && NA.includes(e.to) && !NA.includes(e.from)) { r.sentBack = (r.sentBack || 0) + 1; r.approvedAt = r.prePressAt = r.pressAt = r.leftPressAt = r.leftPressTo = null; }
+    if (e.kind === 'change' && NA.includes(e.to) && !NA.includes(e.from)) { r.sentBack = (r.sentBack || 0) + 1; r.sentBackAt = e.at; r.approvedAt = r.prePressAt = r.pressAt = r.leftPressAt = r.leftPressTo = null; }
     if (e.kind === 'change' && NA.includes(e.from)) r.approvedAt = e.at;
     if (entered && PP.includes(e.to)) { r.prePressAt = e.at; r.pressAt = r.leftPressAt = r.leftPressTo = null; }
     if (entered && PR.includes(e.to)) { r.pressAt = e.at; r.leftPressAt = r.leftPressTo = null; }
     if (e.kind === 'change' && PR.includes(e.from) && !PR.includes(e.to)) { r.leftPressAt = e.at; r.leftPressTo = e.toName; }
   }
+  // Hand-entered dates fill in milestones the dashboard has no recorded time for.
+  for (const m of Object.values(manual)) {
+    let targets = [...rows.values()].filter((r) => r.job === m.job && (m.item == null || r.item === m.item));
+    if (!targets.length) {
+      const info = jobInfo(m.job) || {};
+      const r = { job: m.job, item: m.item ?? '', description: '', title: info.title || '', customer: info.customer || '', csrNo: info.csrNo, stage: '', manualOnly: true };
+      rows.set(m.job + '/' + (m.item ?? '*'), r);
+      targets = [r];
+    }
+    const ORDER = Object.keys(MILESTONES);
+    for (const r of targets) {
+      if (r[m.milestone + 'At']) continue; // a recorded time wins
+      // Skip a typed date that contradicts what was recorded: earlier than a recorded earlier
+      // milestone, or from before the item was sent back to Not Approved (that pass was undone).
+      const day = (iso) => local(iso).slice(0, 10);
+      if (r.sentBackAt && m.date < day(r.sentBackAt)) continue;
+      if (ORDER.slice(0, ORDER.indexOf(m.milestone)).some((k) => r[k + 'At'] && day(r[k + 'At']) > m.date)) continue;
+      if (ORDER.slice(ORDER.indexOf(m.milestone) + 1).some((k) => r[k + 'At'] && day(r[k + 'At']) < m.date)) continue;
+      r[m.milestone + 'Date'] = m.date;
+      r.manualDates = [...new Set([...(r.manualDates || []), MILESTONES[m.milestone]])];
+    }
+  }
   let out = [...rows.values()];
-  if (from || to) out = out.filter((r) => [r.firstSeenAt, r.lastChangeAt].some((t) => t && (!from || t >= from) && (!to || t < to)));
-  return out.sort((a, b) => a.job - b.job || a.item - b.item);
+  if (from || to) {
+    const fromD = from && local(from).slice(0, 10), toD = to && local(new Date(new Date(to) - 1).toISOString()).slice(0, 10);
+    out = out.filter((r) => [r.firstSeenAt, r.lastChangeAt].some((t) => t && (!from || t >= from) && (!to || t < to))
+      || Object.keys(MILESTONES).some((k) => r[k + 'Date'] && (!fromD || r[k + 'Date'] >= fromD) && (!toD || r[k + 'Date'] <= toD)));
+  }
+  return out.sort((a, b) => a.job - b.job || String(a.item).localeCompare(String(b.item), undefined, { numeric: true }));
 }
 
 function csvCell(v) {
@@ -151,11 +184,98 @@ function eventsCsv(opts) {
   );
 }
 
+// A milestone as text: recorded time ("2026-10-22 09:14") or a hand-entered date ("2026-10-14").
+const when = (r, k) => (r[k + 'At'] ? local(r[k + 'At']) : r[k + 'Date'] || '');
+// Calendar days between two milestones (works for hand-entered dates too).
+function days(r, a, b) {
+  const x = when(r, a).slice(0, 10), y = when(r, b).slice(0, 10);
+  return x && y ? Math.round((new Date(y + 'T12:00:00Z') - new Date(x + 'T12:00:00Z')) / 86400000) : '';
+}
 function summaryCsv(opts) {
   return toCsv(
-    ['Job', 'Item', 'Description', 'Customer', 'Title', 'CSR', 'Press', 'First seen', 'First seen in stage', 'Approved (left Not Approved)', 'Entered Pre Press', 'Entered Press', 'Left Press', 'Left Press to', 'Ship date entered', 'Hours Pre Press to Press', 'Hours in Press stage', 'Current/last stage', 'Times sent back to Not Approved'],
-    summary(opts).map((r) => [r.job, r.item, r.description, r.customer, r.title, csrName(r.csrNo), r.press, local(r.firstSeenAt), r.firstStage, local(r.approvedAt), local(r.prePressAt), local(r.pressAt), local(r.leftPressAt), r.leftPressTo || '', local(r.shippedAt), hours(r.prePressAt, r.pressAt), hours(r.pressAt, r.leftPressAt), r.stage, r.sentBack || 0]),
+    ['Job', 'Item', 'Description', 'Customer', 'Title', 'CSR', 'Press', 'First seen', 'First seen in stage', 'Approved (left Not Approved)', 'Entered Pre Press', 'Entered Press', 'Left Press', 'Left Press to', 'Ship date entered', 'Hours Pre Press to Press', 'Hours in Press stage', 'Days Pre Press to Press', 'Days in Press stage', 'Current/last stage', 'Times sent back to Not Approved', 'Dates entered by hand (no time)'],
+    summary(opts).map((r) => [r.job, r.item, r.description, r.customer, r.title, csrName(r.csrNo), r.press, local(r.firstSeenAt), r.firstStage, when(r, 'approved'), when(r, 'prePress'), when(r, 'press'), when(r, 'leftPress'), r.leftPressTo || '', local(r.shippedAt), hours(r.prePressAt, r.pressAt), hours(r.pressAt, r.leftPressAt), days(r, 'prePress', 'press'), days(r, 'press', 'leftPress'), r.stage, r.sentBack || 0, (r.manualDates || []).join(', ')]),
   );
 }
 
-module.exports = { localMidnightIso, init, observe, closed, list, summary, eventsCsv, summaryCsv, local, count: () => events.length, since: () => (events[0] ? events[0].at : null) };
+// ---------- hand-entered dates ----------
+function saveManual() {
+  fs.mkdirSync(cfg.dataDir, { recursive: true });
+  const tmp = MANUAL_FILE + '.tmp';
+  fs.writeFileSync(tmp, JSON.stringify(manual, null, 1));
+  fs.renameSync(tmp, MANUAL_FILE);
+}
+function milestoneOf(word) {
+  const w = String(word || '').toLowerCase().replace(/[^a-z ]/g, ' ').replace(/\s+/g, ' ').trim();
+  if (!w) return null;
+  if (/^(left press|off press|printed|out of press|production|done printing)/.test(w)) return 'leftPress';
+  if (/^(not approved|approved|approval|approve)/.test(w)) return 'approved';
+  if (/^(pre ?press|prepress)/.test(w)) return 'prePress';
+  if (/^(press|on press|to press|indigo|ricoh|konica)/.test(w)) return 'press';
+  return null;
+}
+// "10/14", "10/14/26", "10/14/2026", "2026-10-14" -> "2026-10-14"
+function parseDate(s) {
+  s = String(s || '').trim();
+  let m = /^(\d{4})-(\d{1,2})-(\d{1,2})/.exec(s);
+  if (m) return `${m[1]}-${m[2].padStart(2, '0')}-${m[3].padStart(2, '0')}`;
+  m = /^(\d{1,2})[\/.-](\d{1,2})(?:[\/.-](\d{2,4}))?$/.exec(s);
+  if (!m) return null;
+  const today = local(new Date().toISOString()).slice(0, 10);
+  let y = m[3] ? (m[3].length === 2 ? 2000 + +m[3] : +m[3]) : +today.slice(0, 4);
+  let d = `${y}-${m[1].padStart(2, '0')}-${m[2].padStart(2, '0')}`;
+  if (!m[3] && d > today) d = `${y - 1}${d.slice(4)}`; // no year given and it would be in the future: last year
+  const t = new Date(d + 'T12:00:00Z');
+  return isNaN(t) || t.toISOString().slice(0, 10) !== d ? null : d;
+}
+
+// Accepts text pasted from Excel or a CSV, in either shape:
+//   one row per job, with a header:   Job | Item | Approved | Pre Press | Press | Left Press
+//   one row per date:                 267130, Pre Press, 10/14   (optional item: 267130, 2, Press, 10/15)
+function importManual(text) {
+  const lines = String(text || '').split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+  const split = (l) => (l.includes('\t') ? l.split('\t') : l.split(',')).map((c) => c.trim().replace(/^"|"$/g, ''));
+  const added = [], errors = [];
+  const put = (job, item, milestone, date, line) => {
+    manual[`${job}/${item ?? '*'}/${milestone}`] = { job, item, milestone, date, addedAt: new Date().toISOString() };
+    added.push({ job, item, stage: MILESTONES[milestone], date, line });
+  };
+  if (!lines.length) return { added, errors: ['Nothing to import.'] };
+  const head = split(lines[0]);
+  const cols = head.map(milestoneOf);
+  const jobCol = head.findIndex((h) => /^(job|job ?#|job ?no|job number)$/i.test(h));
+  const itemCol = head.findIndex((h) => /^item/i.test(h));
+  if (cols.some(Boolean) && jobCol >= 0) {
+    lines.slice(1).forEach((l, i) => {
+      const c = split(l), job = parseInt(c[jobCol], 10), item = itemCol >= 0 && c[itemCol] ? parseInt(c[itemCol], 10) : null;
+      if (!job) return errors.push(`Line ${i + 2}: no job number`);
+      cols.forEach((ms, k) => {
+        if (!ms || !c[k]) return;
+        const d = parseDate(c[k]);
+        if (d) put(job, item, ms, d, i + 2); else errors.push(`Line ${i + 2}: "${c[k]}" isn't a date`);
+      });
+    });
+  } else {
+    lines.forEach((l, i) => {
+      // Free-form: any separators. Job = 5+ digit number, date = first date-looking token,
+      // stage = the words left over, item = a 1-3 digit number (optional).
+      const tokens = l.split(/[\s,;|]+/).filter(Boolean);
+      const dateTok = tokens.find((x) => parseDate(x));
+      const jobTok = tokens.find((x) => /^#?\d{5,}$/.test(x));
+      if (i === 0 && !jobTok) return; // header row
+      const rest = tokens.filter((x) => x !== dateTok && x !== jobTok);
+      const itemTok = rest.find((x) => /^(item)?#?\d{1,3}$/i.test(x));
+      const ms = milestoneOf(rest.filter((x) => x !== itemTok && !/^item$/i.test(x)).join(' '));
+      if (!jobTok) return errors.push(`Line ${i + 1}: no job number`);
+      if (!ms) return errors.push(`Line ${i + 1}: no stage (use Approved, Pre Press, Press or Left Press)`);
+      if (!dateTok) return errors.push(`Line ${i + 1}: no date`);
+      put(parseInt(jobTok.replace('#', ''), 10), itemTok ? parseInt(itemTok.replace(/\D/g, ''), 10) : null, ms, parseDate(dateTok), i + 1);
+    });
+  }
+  if (added.length) saveManual();
+  return { added, errors };
+}
+function listManual() { return Object.values(manual).sort((a, b) => a.job - b.job || a.milestone.localeCompare(b.milestone)); }
+function removeManual(key) { if (key === '*') manual = {}; else delete manual[key]; saveManual(); }
+
+module.exports = { importManual, listManual, removeManual, localMidnightIso, init, observe, closed, list, summary, eventsCsv, summaryCsv, local, count: () => events.length, since: () => (events[0] ? events[0].at : null) };
