@@ -8,7 +8,7 @@ const settings = require('./settings');
 const stagelog = require('./stagelog');
 
 const PUBLIC = path.join(__dirname, '..', 'public');
-const TYPES = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.svg': 'image/svg+xml', '.ico': 'image/x-icon' };
+const TYPES = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.svg': 'image/svg+xml', '.ico': 'image/x-icon', '.png': 'image/png', '.woff2': 'font/woff2', '.txt': 'text/plain; charset=utf-8' };
 
 function loadLabels() {
   let labels = {};
@@ -101,6 +101,9 @@ const server = http.createServer(async (req, res) => {
   if (p === '/logout') return send(res, 303, '', 'text/plain', { Location: '/login', 'Set-Cookie': `${COOKIE}=; Path=/; Max-Age=0` });
   if (p === '/login.css') return sendFile(res, 'app.css');
   if (p === '/favicon.svg') return sendFile(res, 'favicon.svg');
+  // Brand assets are needed by the login page too, so they're served before the login check.
+  if (p === '/brand.css' || p === '/logo-white.png') return sendFile(res, p.slice(1));
+  if (/^\/fonts\/[a-z0-9_-]+\.(woff2|txt)$/i.test(p)) return sendFile(res, p.slice(1));
 
   if (!open && !keyOk && !validToken(cookies(req)[COOKIE])) {
     if (p.startsWith('/api/')) return send(res, 401, '{"error":"login required"}', 'application/json');

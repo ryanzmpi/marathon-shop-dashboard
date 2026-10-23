@@ -1,0 +1,91 @@
+/* Marathon Printing brand styling (from the 2024 brand guide), loaded after each page's own styles.
+   Colors: Endurance Run Blue #22475A, Finish Line Orange #ED6441.
+   Fonts: Oswald stands in for "2 Inch Numbers" (titles, numbers) and Jost for Futura PT (body);
+   both are free (SIL Open Font License, see /fonts). To use the real fonts, add their files to
+   /fonts and change the font-family names in --display and --font below.
+   Stage colours, late red and due-today amber are deliberately left as they are. */
+@font-face { font-family: "Oswald"; src: url(/fonts/oswald-latin-500-normal.woff2) format("woff2"); font-weight: 500; font-display: swap; }
+@font-face { font-family: "Oswald"; src: url(/fonts/oswald-latin-600-normal.woff2) format("woff2"); font-weight: 600 700; font-display: swap; }
+@font-face { font-family: "Jost"; src: url(/fonts/jost-latin-400-normal.woff2) format("woff2"); font-weight: 400; font-display: swap; }
+@font-face { font-family: "Jost"; src: url(/fonts/jost-latin-500-normal.woff2) format("woff2"); font-weight: 500; font-display: swap; }
+@font-face { font-family: "Jost"; src: url(/fonts/jost-latin-600-normal.woff2) format("woff2"); font-weight: 600 700; font-display: swap; }
+@font-face { font-family: "Jost"; src: url(/fonts/jost-latin-500-italic.woff2) format("woff2"); font-weight: 400 500; font-style: italic; font-display: swap; }
+@font-face { font-family: "Jost"; src: url(/fonts/jost-latin-600-italic.woff2) format("woff2"); font-weight: 600 700; font-style: italic; font-display: swap; }
+
+:root, :root[data-theme="dark"], :root:not([data-theme="light"]) {
+  color-scheme: dark;
+  --bg: #0d1b22;
+  --surface: #132833;
+  --surface-2: #1a3542;
+  --border: #244454;
+  --text: #ffffff;
+  --text-2: #b7c8d1;
+  --muted: #7d97a4;
+  --accent: #ED6441;
+  --accent-soft: #5a2a1c;
+  --bar: #6aa2bd;
+  --critical: #e5484d;
+  --critical-ink: #ff8f8f;
+  --critical-soft: #3b1d22;
+  --font: "Jost", "Futura PT", Futura, system-ui, sans-serif;
+  --display: "Oswald", "2 Inch Numbers", Impact, sans-serif;
+}
+body { font-family: var(--font); font-weight: 500; background: var(--bg); }
+
+/* header: Endurance Run Blue bar with the white logo and an orange title tab */
+.top { background: #22475A; border-bottom: 3px solid #ED6441; padding: 12px 24px; }
+.top h1, .tv-head h1 { display: flex; align-items: center; gap: 16px; margin: 0; }
+.brand-logo { height: 38px; width: auto; display: block; }
+.brand-tab { font-family: var(--display); font-weight: 600; text-transform: uppercase; letter-spacing: .04em; background: #ED6441; color: #fff; padding: 3px 14px 2px; font-size: 18px; box-shadow: 3px 3px 0 rgba(0,0,0,.35); }
+.top .sub { color: #d3e2ea; font-style: italic; }
+.top .links a { color: #fff; font-family: var(--display); text-transform: uppercase; letter-spacing: .05em; font-size: 14px; text-decoration: none; }
+.top .links a:hover { color: #ED6441; }
+
+/* section titles like the brand guide: orange condensed caps with an orange rule */
+.card h2, .gauges-head h2 { font-family: var(--display); font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: #ED6441; font-size: 17px; display: inline-block; border-bottom: 3px solid #ED6441; padding-bottom: 2px; margin-bottom: 6px; }
+.card .hint { font-style: italic; }
+.card, .kpi { border-radius: 4px; }
+
+/* numbers in the display face */
+.kpi .label { font-family: var(--display); text-transform: uppercase; letter-spacing: .05em; font-size: 13px; }
+.kpi .value, .gauge .g-value, .tv-kpi .v, .tv-stage .v { font-family: var(--display); font-weight: 600; letter-spacing: 0; }
+.kpi { border-left: 4px solid #22475A; }
+.kpi:not(.critical):not(.warning) { border-left-color: #3d6f88; }
+th { font-family: var(--display); text-transform: uppercase; letter-spacing: .05em; font-weight: 500; }
+.chip[aria-pressed="true"] { background: #ED6441; border-color: #ED6441; color: #fff; }
+a { color: #ED6441; }
+.gauge h3, .tv-gauges .gauge h3 { font-family: var(--display); text-transform: uppercase; letter-spacing: .05em; font-weight: 500; }
+
+/* TV */
+.tv-head { background: #22475A; margin: -1.6vh -1.6vw 0; padding: 1.2vh 1.6vw; border-bottom: .35vh solid #ED6441; align-items: center !important; }
+.tv-head .brand-logo { height: 4.2vh; }
+.tv-head .brand-tab { font-size: 1.15em; }
+.tv-head .date { color: #d3e2ea; font-style: italic; }
+.tv-head .clock { font-family: var(--display); font-weight: 600; }
+.tv-kpi { border-radius: 4px; }
+.tv-kpi .l, .tv-stage .l { font-family: var(--display); text-transform: uppercase; letter-spacing: .05em; }
+.tv-col { border-radius: 4px; }
+.tv-col h2 { font-family: var(--display); text-transform: uppercase; letter-spacing: .05em; font-weight: 600; }
+.tv-col.today h2 { color: #ED6441; }
+.tv-job .no { font-family: var(--display); font-weight: 600; letter-spacing: .01em; }
+.tv-press, .tv-gauges .gauge, .tv-stage { border-radius: 4px; }
+.tv-press h3 { font-family: var(--display); text-transform: uppercase; letter-spacing: .05em; font-weight: 500; }
+/* keep the brand guide's clear space (about one "M") around the logo */
+.top h1, .tv-head h1 { gap: 30px; }
+.top > div:first-child { display: flex; align-items: center; gap: 10px 22px; flex-wrap: wrap; min-width: 0; }
+@media (max-width: 560px) { .brand-logo { height: 30px; } .brand-tab { font-size: 15px; } .top h1 { gap: 18px; } }
+.top { padding: 16px 28px; }
+/* Need By chips in brand blue instead of the generic blue */
+.tv-job .nb:not(.hot):not(.none) { background: #2f6480; color: #fff; }
+@media (orientation: portrait) {
+  .tv-head { flex-wrap: nowrap !important; }
+  .tv-head .brand-logo { height: 2.6vh; }
+  .tv-head h1 { gap: 2.2vw; }
+  .tv-head .brand-tab { font-size: .95em; }
+}
+
+/* other pages (stage history, settings, login) */
+.sh-head h1, .settings h1, .login h1 { font-family: var(--display); font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: #ED6441; }
+.tabs button[aria-selected=true] { border-bottom-color: #ED6441; }
+.dl, .actions button, .add-row button { background: #ED6441; border-color: #ED6441; }
+.login .brand-logo { height: 40px; margin: 0 auto 10px; }
