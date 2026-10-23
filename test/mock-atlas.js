@@ -19,6 +19,7 @@ const ORDERS = [
   { n: '264698', cust: 'Riverside Funeral Home', works: 'Memorial Cards, Invoice Pads', due: 0, notes: nb(1), total: '175.00', qty: 87, jobs: [['Cards', 75, [step('Printing', 'Indigo 7900')]], ['Carbonless Forms', 12, [step('Printing', 'Konica', 'Waiting', 'InternalPages')]]] },
   { n: '264697', cust: 'Sandy Auto Body', works: 'Parking Sign - Reflective Mounted', due: -1, notes: null, total: '90.00', qty: 1, jobs: [['Rigid Signs', 1, [step('Printing', 'HP Latex')]]] },
   { n: '264695', cust: 'Menucha Retreat', works: ', MENUCHA MEANDER', due: 1, notes: nb(1), total: '1546.00', qty: 5101, jobs: [['Flyers', 5100, [step('Printing', 'Indigo 7900', 'In Progress')]]] },
+  { n: '264696', cust: 'Menucha Retreat', works: 'READY BUT STEPS WAITING', due: 0, notes: nb(0), total: '300.00', qty: 100, ready: 0, jobs: [['Flyers', 100, [step('Folding', null)]]] },
   { n: '268502', cust: 'Pirates Crew', works: 'Pirates Crew T-Shirt', due: 3, notes: nb(3), total: '124.80', qty: 13, jobs: [['T-Shirt', 13, [step('Exposure (Stencil Creation)', 'Screen Printing')]]] },
   { n: '268501', cust: 'Mt Hood Transit', works: 'Transportation Slips', due: 4, notes: nb(5), total: '87.00', qty: 200, jobs: [['Carbonless Forms', 200, [step('Cutting', 'Guillotine')]]] },
   { n: '264694', cust: "Portland Women's Forum", works: 'GARDEN CLUB YEARBOOKS', due: 5, notes: 'NB ?', total: '138.00', qty: 45, jobs: [['Booklets', 30, [step('Packing', null)]]] },

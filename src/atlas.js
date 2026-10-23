@@ -82,9 +82,9 @@ function normalize(o, jobs) {
       steps: sts.map((s) => [s.productType, s.currentStation, s.status, s.machineName].filter(Boolean).join(' · ')),
     });
   });
-  // An order with a ready date whose steps are all done counts as finished (same as the Atlas Dashboard).
-  const allDone = (jobs || []).every((jb) => !(jb.jobStatuses || []).length || jb.jobStatuses.every((s) => DONE.test(s.status || '')));
-  const ready = o.readyDate && (allDone || !isOpenOrder(o)) ? utcToLocalDate(o.readyDate) : null;
+    // An order marked Ready in GoMake is finished, even if its steps still say "Waiting"
+  // (same rule as the Atlas Dashboard).
+  const ready = o.readyDate ? utcToLocalDate(o.readyDate) : null;
   const total = num(o.totalPrice || o.totalPayment);
   return {
     source: 'atlas',
