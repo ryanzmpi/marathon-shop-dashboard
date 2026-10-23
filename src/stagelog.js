@@ -35,6 +35,8 @@ function init(lbls, info) {
 
 const statusName = (code) => (code == null ? '' : (labels.itemStatus || {})[String(code)] || `Status ${code}`);
 function pressesFor(job, itemNo) {
+  const main = (job.items || []).find((i) => i.itemNo === itemNo && i.serNo === 0);
+  if (main && main.press) return main.press; // Atlas items name their press directly
   const list = labels.presses || [];
   return list.filter((p) => (job.items || []).some((s) => s.itemNo === itemNo && s.serNo > 0 && p.services.map(Number).includes(s.serNo))).map((p) => p.name).join(' + ');
 }
@@ -60,10 +62,11 @@ function add(e) { events.push(e); pending.push(e); }
 // Called every time the scanner reads an open job. `isNew` = a newly created job number
 // (found while probing past the newest job), so its first-seen time is close to when it was entered.
 function observe(job, { isNew = false } = {}) {
-  if (!job || !job.jobNo) return;
+  if (!job || !(job.key || job.jobNo)) return;
+  const id = job.key || job.jobNo; // Atlas orders use "A268506" so they never mix with Printer's Plan numbers
   const now = new Date().toISOString();
-  const prev = last[job.jobNo];
-  const base = { job: job.jobNo, title: job.title, customer: job.customer, csrNo: job.csrNo };
+  const prev = last[id];
+  const base = { job: id, title: job.title, customer: job.customer, csrNo: job.csrNo, csrName: job.csrName };
   const items = {};
   for (const i of job.items || []) {
     if (i.serNo !== 0) continue;
@@ -77,7 +80,7 @@ function observe(job, { isNew = false } = {}) {
   }
   const shipped = !!job.dateShipped;
   if (prev && shipped && !prev.shipped) add({ ...base, at: now, prevSeenAt: prev.seenAt, kind: 'shipped', item: null, description: '', from: null, fromName: '', to: null, toName: 'Ship date entered', press: '' });
-  last[job.jobNo] = { seenAt: now, shipped, items, title: job.title, customer: job.customer, csrNo: job.csrNo };
+  last[id] = { seenAt: now, shipped, items, title: job.title, customer: job.customer, csrNo: job.csrNo, csrName: job.csrName };
   flush();
 }
 
@@ -85,7 +88,7 @@ function observe(job, { isNew = false } = {}) {
 function closed(jobNo, why) {
   const prev = last[jobNo];
   if (!prev) return;
-  add({ job: Number(jobNo), title: prev.title, customer: prev.customer, csrNo: prev.csrNo, at: new Date().toISOString(), prevSeenAt: prev.seenAt, kind: 'closed', item: null, description: '', from: null, fromName: '', to: null, toName: why, press: '' });
+  add({ job: /^\d+$/.test(String(jobNo)) ? Number(jobNo) : String(jobNo), title: prev.title, customer: prev.customer, csrNo: prev.csrNo, csrName: prev.csrName, at: new Date().toISOString(), prevSeenAt: prev.seenAt, kind: 'closed', item: null, description: '', from: null, fromName: '', to: null, toName: why, press: '' });
   delete last[jobNo];
   flush();
 }
@@ -127,7 +130,7 @@ function summary({ from, to } = {}) {
     }
     const k = e.job + '/' + e.item;
     let r = rows.get(k);
-    if (!r) { r = { job: e.job, item: e.item, description: e.description, title: e.title, customer: e.customer, csrNo: e.csrNo, firstSeenAt: e.at, firstSeenKind: e.kind, firstStage: e.toName }; rows.set(k, r); }
+    if (!r) { r = { job: e.job, item: e.item, description: e.description, title: e.title, customer: e.customer, csrNo: e.csrNo, csrName: e.csrName, firstSeenAt: e.at, firstSeenKind: e.kind, firstStage: e.toName }; rows.set(k, r); }
     r.stage = e.toName; r.press = e.press || r.press; r.description = e.description || r.description; r.lastChangeAt = e.at;
     // A brand-new job seen within a minute of being entered counts as entering its first stage then.
     // Items can go backwards (e.g. sent back to Not Approved for a new proof), so the summary keeps
@@ -167,7 +170,7 @@ function summary({ from, to } = {}) {
     out = out.filter((r) => [r.firstSeenAt, r.lastChangeAt].some((t) => t && (!from || t >= from) && (!to || t < to))
       || Object.keys(MILESTONES).some((k) => r[k + 'Date'] && (!fromD || r[k + 'Date'] >= fromD) && (!toD || r[k + 'Date'] <= toD)));
   }
-  return out.sort((a, b) => a.job - b.job || String(a.item).localeCompare(String(b.item), undefined, { numeric: true }));
+  return out.sort((a, b) => String(a.job).localeCompare(String(b.job), undefined, { numeric: true }) || String(a.item).localeCompare(String(b.item), undefined, { numeric: true }));
 }
 
 function csvCell(v) {
@@ -180,7 +183,7 @@ function eventsCsv(opts) {
   const KIND = { change: 'Stage change', new: 'New job', 'first-seen': 'First seen (already open when tracking started)', 'item-added': 'Item added', shipped: 'Ship date entered', closed: 'Left open list' };
   return toCsv(
     ['Seen at', 'Changed after', 'Job', 'Item', 'Description', 'From stage', 'To stage', 'Press', 'Event', 'Customer', 'Title', 'CSR'],
-    list(opts).map((e) => [local(e.at), local(e.prevSeenAt), e.job, e.item ?? '', e.description, e.fromName, e.toName, e.press, KIND[e.kind] || e.kind, e.customer, e.title, csrName(e.csrNo)]),
+    list(opts).map((e) => [local(e.at), local(e.prevSeenAt), e.job, e.item ?? '', e.description, e.fromName, e.toName, e.press, KIND[e.kind] || e.kind, e.customer, e.title, e.csrName || csrName(e.csrNo)]),
   );
 }
 
@@ -194,7 +197,7 @@ function days(r, a, b) {
 function summaryCsv(opts) {
   return toCsv(
     ['Job', 'Item', 'Description', 'Customer', 'Title', 'CSR', 'Press', 'First seen', 'First seen in stage', 'Approved (left Not Approved)', 'Entered Pre Press', 'Entered Press', 'Left Press', 'Left Press to', 'Ship date entered', 'Hours Pre Press to Press', 'Hours in Press stage', 'Days Pre Press to Press', 'Days in Press stage', 'Current/last stage', 'Times sent back to Not Approved', 'Dates entered by hand (no time)'],
-    summary(opts).map((r) => [r.job, r.item, r.description, r.customer, r.title, csrName(r.csrNo), r.press, local(r.firstSeenAt), r.firstStage, when(r, 'approved'), when(r, 'prePress'), when(r, 'press'), when(r, 'leftPress'), r.leftPressTo || '', local(r.shippedAt), hours(r.prePressAt, r.pressAt), hours(r.pressAt, r.leftPressAt), days(r, 'prePress', 'press'), days(r, 'press', 'leftPress'), r.stage, r.sentBack || 0, (r.manualDates || []).join(', ')]),
+    summary(opts).map((r) => [r.job, r.item, r.description, r.customer, r.title, r.csrName || csrName(r.csrNo), r.press, local(r.firstSeenAt), r.firstStage, when(r, 'approved'), when(r, 'prePress'), when(r, 'press'), when(r, 'leftPress'), r.leftPressTo || '', local(r.shippedAt), hours(r.prePressAt, r.pressAt), hours(r.pressAt, r.leftPressAt), days(r, 'prePress', 'press'), days(r, 'press', 'leftPress'), r.stage, r.sentBack || 0, (r.manualDates || []).join(', ')]),
   );
 }
 

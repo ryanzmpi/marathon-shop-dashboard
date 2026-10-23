@@ -16,7 +16,7 @@
     const rp = M.isReprint(j);
     const hot = M.nbHot(j, today);
     return `<div class="tv-job${rp ? ' reprint' : ''}${hot ? ' nb-hot' : ''}">
-      <div class="no">${j.jobNo}</div>
+      <div class="no">${j.jobNo}${M.isAtlas(j) ? '<span class="src">Atlas</span>' : ''}</div>
       <div class="t">${rp ? M.REPRINT_BADGE : ''}${M.esc(j.title || '(no title)')}</div>
       <div class="m">
         ${hot ? `<span class="nb hot">${M.NB_HOT_ICON}<span class="full">${hot}</span><span class="short">${M.nbHotShort(hot)}</span></span>` : M.needBy(j) ? `<span class="nb">NB ${M.fmtShort(M.needBy(j))}</span>` : `<span class="nb none">${M.esc(M.needByText(j)) || 'No NB'}</span>`}
@@ -25,7 +25,7 @@
         <span class="cust">${M.esc(j.customer || '')}</span>
         ${M.jobStageChip(j)}
       </div>
-      ${j.csrNo ? `<div class="csr" title="CSR">${CSR_ICON}<span>${M.esc(M.person('csr', j.csrNo))}</span></div>` : ''}
+      ${M.csrOf(j) && M.csrOf(j) !== '—' ? `<div class="csr" title="CSR">${CSR_ICON}<span>${M.esc(M.csrOf(j))}</span></div>` : ''}
       ${M.jobQty(j) ? `<div class="qty-side">${M.fmtQty(M.jobQty(j))}<small> pcs</small></div>` : ''}
     </div>`;
   }

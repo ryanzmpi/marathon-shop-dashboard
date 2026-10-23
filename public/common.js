@@ -44,6 +44,13 @@ const MSD = (() => {
   };
   const stage = (j) => { const c = stageCode(j); return c === null ? '' : lab('itemStatus', c, 'Status'); };
   const person = (group, code) => (code ? lab(group, code, '#') : '—');
+  // CSR for any job: Printer's Plan CSR number, or the name Atlas sends.
+  const csrOf = (j) => (j.source === 'atlas' ? j.csrName || '—' : person('csr', j.csrNo));
+  const jobKey = (j) => j.key || String(j.jobNo);
+  const isAtlas = (j) => j.source === 'atlas';
+  const ATLAS_BADGE = '<span class="badge atlas" title="Atlas order">Atlas</span>';
+  // Where a stage sits in labels.stageOrder (for sorting jobs from both systems together).
+  const stageRank = (j) => { const i = (L.stageOrder || []).indexOf(stage(j)); return i === -1 ? 99 : i; };
 
   // ----- classify an open job relative to today -----
   function bucket(j, today) {
@@ -345,8 +352,10 @@ const MSD = (() => {
       return items.some((s) => s.serNo > 0 && svcs.includes(s.serNo) && mains.some((m) => m.itemNo === s.itemNo));
     }).map((p) => p.name);
     const mains = items.filter((i) => i.serNo === 0);
-    const atStage = pick(mains.filter((m) => m.status === code));
-    return atStage.length ? atStage : pick(mains);
+    // Atlas items name their press directly (from the machine on the printing step).
+    const direct = (ms) => [...new Set(ms.map((m) => m.press).filter(Boolean).flatMap((p) => p.split(' + ')))];
+    const atStage = direct(mains.filter((m) => m.status === code)).length ? direct(mains.filter((m) => m.status === code)) : pick(mains.filter((m) => m.status === code));
+    return atStage.length ? atStage : direct(mains).length ? direct(mains) : pick(mains);
   }
   // The stage chip for a job; jobs in Press also name the press, e.g. "Press · Indigo".
   function jobStageChip(j) {
@@ -380,7 +389,9 @@ const MSD = (() => {
   function scanPill(scan) {
     const bf = scan.backfill;
     let cls = '', text = 'Live';
+    const at = scan.atlas;
     if (scan.lastErrorAt && (!scan.lastOkAt || scan.lastErrorAt > scan.lastOkAt)) { cls = 'err'; text = 'Can’t reach Printer’s Plan'; }
+    else if (at && at.enabled && at.lastErrorAt && (!at.lastOkAt || at.lastErrorAt > at.lastOkAt)) { cls = 'err'; text = 'Can’t reach Atlas'; }
     else if (bf && !bf.done) { cls = 'warn'; text = `Initial scan ${Math.round(bf.progress * 100)}%`; }
     else if (!scan.lastCycleAt) { cls = 'warn'; text = 'Starting…'; }
     const when = scan.lastCycleAt ? new Date(scan.lastCycleAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : '';
@@ -400,5 +411,5 @@ const MSD = (() => {
     tipEl.style.left = x + 'px'; tipEl.style.top = y + 'px';
   }
 
-  return { nbHotShort, jobPresses, jobStageChip, nbHot, NB_HOT_ICON, shipVia, pressMinutes, pressBuckets, renderPress, fmtHrs, jobQty, fmtQty, renderGauges, gaugeSvg, jobsDueOn, dueTodayFraction, stageColor, stageChip, ignored, stage, stageCode, amount, prevWorkday, workdayOf, workdayBefore, needBy, needByText, cmpNeedBy, cmpDueThenNB, isReprint, REPRINT_BADGE, parse, addDays, diffDays, isWeekend, nextWorkday, weekStart, fmtShort, fmtDay, fmtLong, money, moneyK, esc, lab, jobStage, itemStage, mainLine, person, bucket, BUCKET_NAMES, ICONS, dueBadge, load, stageList, scanPill, tip };
+  return { csrOf, jobKey, isAtlas, ATLAS_BADGE, stageRank, nbHotShort, jobPresses, jobStageChip, nbHot, NB_HOT_ICON, shipVia, pressMinutes, pressBuckets, renderPress, fmtHrs, jobQty, fmtQty, renderGauges, gaugeSvg, jobsDueOn, dueTodayFraction, stageColor, stageChip, ignored, stage, stageCode, amount, prevWorkday, workdayOf, workdayBefore, needBy, needByText, cmpNeedBy, cmpDueThenNB, isReprint, REPRINT_BADGE, parse, addDays, diffDays, isWeekend, nextWorkday, weekStart, fmtShort, fmtDay, fmtLong, money, moneyK, esc, lab, jobStage, itemStage, mainLine, person, bucket, BUCKET_NAMES, ICONS, dueBadge, load, stageList, scanPill, tip };
 })();

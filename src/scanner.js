@@ -10,6 +10,7 @@ const path = require('path');
 const cfg = require('./config');
 const { getJob, stats } = require('./listener');
 const stagelog = require('./stagelog');
+const atlas = require('./atlas');
 
 const STATE_FILE = path.join(cfg.dataDir, 'state.json');
 
@@ -62,6 +63,7 @@ function daysAgo(d) {
 
 function slimInvoiced(job) {
   return {
+    source: job.source, key: job.key, csrName: job.csrName,
     jobNo: job.jobNo, title: job.title, customer: job.customer, csrNo: job.csrNo, repNo: job.repNo,
     dateIn: job.dateIn, dateDue: job.dateDue, dateShipped: job.dateShipped, subtotal: job.subtotal, total: job.total,
   };
@@ -253,7 +255,7 @@ async function cycle() {
     state.phase = 'checking for new jobs';
     await findNewJobs();
     state.phase = 'refreshing open jobs';
-    await recheckOpen();
+    await Promise.all([recheckOpen(), refreshAtlas()]);
     await upgradeInvoiced();
     pruneInvoiced();
     pruneYtd();
@@ -277,10 +279,24 @@ function start() {
 }
 
 // Dollar totals for the gauges. Shipped = has a ship date (invoiced or not); received = entered today.
+// Atlas orders: refresh, and log their stage changes like Printer's Plan jobs.
+let atlasOpenKeys = new Set();
+async function refreshAtlas() {
+  await atlas.refresh();
+  const st = atlas.status();
+  if (!st.lastOkAt || (st.lastErrorAt && st.lastErrorAt > st.lastOkAt)) return; // keep the last good picture
+  const now = new Set();
+  for (const j of atlas.openJobs()) { stagelog.observe(j); now.add(j.key); }
+  for (const j of atlas.shippedJobs()) if (atlasOpenKeys.has(j.key)) { stagelog.observe(j); stagelog.closed(j.key, 'Ready in Atlas'); }
+  for (const k of atlasOpenKeys) if (!now.has(k) && !atlas.shippedJobs().some((j) => j.key === k)) stagelog.closed(k, 'Closed in Atlas');
+  atlasOpenKeys = now;
+}
+
 function gaugeValues(openAll) {
   const t = todayLocal(), m = t.slice(0, 8) + '01', y = t.slice(0, 4) + '-01-01';
   const shipped = { ...state.ytd.jobs };
-  for (const j of openAll) if (j.dateShipped) shipped[j.jobNo] = [j.dateShipped, j.total ?? j.subtotal ?? 0];
+  for (const j of openAll) if (j.dateShipped) shipped[j.key || j.jobNo] = [j.dateShipped, j.total ?? j.subtotal ?? 0];
+  for (const j of atlas.shippedJobs()) shipped[j.key] = [j.dateShipped, j.total ?? 0];
   let day = 0, month = 0, year = 0;
   for (const [d, amt] of Object.values(shipped)) {
     if (d >= y && d <= t) year += amt;
@@ -289,9 +305,9 @@ function gaugeValues(openAll) {
   }
   const seen = new Set();
   let received = 0;
-  for (const j of [...openAll, ...Object.values(state.invoiced)]) {
-    if (j.dateIn !== t || seen.has(j.jobNo)) continue;
-    seen.add(j.jobNo);
+  for (const j of [...openAll, ...Object.values(state.invoiced), ...atlas.shippedJobs()]) {
+    if (j.dateIn !== t || seen.has(j.key || j.jobNo)) continue;
+    seen.add(j.key || j.jobNo);
     received += j.total ?? j.subtotal ?? 0;
   }
   const r = (v) => Math.round(v * 100) / 100;
@@ -305,9 +321,10 @@ function snapshot() {
   const bf = state.backfill;
   // A job drops off the open list as soon as a ship date is entered in Printer's Plan,
   // even before it's invoiced. Those jobs count toward the "shipped" totals instead.
-  const all = Object.values(state.open);
+  const all = [...Object.values(state.open), ...atlas.openJobs()];
   const shipped = { ...state.invoiced };
-  for (const j of all) if (j.dateShipped) shipped[j.jobNo] = slimInvoiced(j);
+  for (const j of all) if (j.dateShipped) shipped[j.key || j.jobNo] = slimInvoiced(j);
+  for (const j of atlas.shippedJobs()) if (daysAgo(j.dateShipped) <= cfg.invoicedKeepDays) shipped[j.key] = slimInvoiced(j);
   return {
     gauges: gaugeValues(all),
     open: all.filter((j) => !j.dateShipped),
@@ -323,13 +340,15 @@ function snapshot() {
       lastError: stats.lastError,
       lastErrorAt: stats.lastErrorAt,
       lastOkAt: stats.lastOkAt,
+      atlas: atlas.status(),
     },
   };
 }
 
 // Basic info for any job we know about (open or recently invoiced), for the stage history.
 function jobInfo(jobNo) {
-  const j = state.open[jobNo] || state.invoiced[jobNo];
+  const k = String(jobNo);
+  const j = k.startsWith('A') ? [...atlas.openJobs(), ...atlas.shippedJobs()].find((x) => x.key === k) : state.open[jobNo] || state.invoiced[jobNo];
   return j ? { title: j.title, customer: j.customer, csrNo: j.csrNo } : null;
 }
 

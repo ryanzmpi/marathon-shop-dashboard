@@ -22,6 +22,9 @@ module.exports = {
   // Optional PIN required to change gauge targets on the /settings page.
   settingsPin: process.env.SETTINGS_PIN || '',
 
+  // Atlas (GoMake) orders come from the Atlas Dashboard's JSON API. Set ATLAS_URL=off to turn it off.
+  atlasUrl: (process.env.ATLAS_URL === 'off' ? '' : process.env.ATLAS_URL || 'https://gomake-dashboard-production.up.railway.app').replace(/\/+$/, ''),
+
   timeZone: process.env.TZ_NAME || 'America/Los_Angeles',
 
   // Where scan results are cached between restarts (mount a Railway volume here).

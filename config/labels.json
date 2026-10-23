@@ -11,7 +11,15 @@
     "13": "Misc",
     "14": "Wide Format",
     "16": "Production",
-    "17": "Stock"
+    "17": "Stock",
+    "105": "Not Approved",
+    "106": "Pre Press",
+    "108": "Press",
+    "110": "Screen Printing",
+    "113": "Misc",
+    "114": "Wide Format",
+    "116": "Production",
+    "118": "Packing"
   },
   "csr": {
     "101": "Shawn",
@@ -58,7 +66,10 @@
   "pressPendingStatuses": [
     5,
     6,
-    8
+    8,
+    105,
+    106,
+    108
   ],
   "stageOrder": [
     "Not Approved",
@@ -66,6 +77,8 @@
     "Press",
     "Production",
     "Wide Format",
+    "Screen Printing",
+    "Packing",
     "Stock",
     "Misc"
   ],
@@ -76,7 +89,9 @@
     "Production": "#FF793B",
     "Wide Format": "#1BFC06",
     "Stock": "#FA3BF0",
-    "Misc": "#C8C8C8"
+    "Misc": "#C8C8C8",
+    "Screen Printing": "#8B5CF6",
+    "Packing": "#FA3BF0"
   },
   "hiddenJobStatuses": [],
   "shipVia": {

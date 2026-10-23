@@ -137,8 +137,8 @@
     { key: 'title', label: 'Customer / title', val: (j) => (j.customer || '').toLowerCase() },
     { key: 'qty', label: 'Qty', val: (j) => M.jobQty(j), right: true },
     { key: 'via', label: 'Ship via', val: (j) => M.shipVia(j).toLowerCase() || '~' },
-    { key: 'stage', label: 'Stage', val: (j) => M.stageCode(j) ?? 999 },
-    { key: 'csr', label: 'CSR', val: (j) => M.person('csr', j.csrNo) },
+    { key: 'stage', label: 'Stage', val: (j) => M.stageRank(j) },
+    { key: 'csr', label: 'CSR', val: (j) => M.csrOf(j) },
     { key: 'amt', label: 'Amount', val: (j) => M.amount(j), right: true },
   ];
 
@@ -151,7 +151,7 @@
     $('chips').innerHTML = chips.map(([k, l]) => `<button class="chip" data-b="${k}" aria-pressed="${f.bucket === k && !f.date}">${l}</button>`).join('')
       + (f.date ? `<button class="chip" data-b="clear-date" aria-pressed="true">Due ${M.fmtDay(f.date)} ✕</button>` : '');
     fillSelect($('fStage'), 'Stage', M.stageList(open).map((s) => s[0]), f.stage);
-    fillSelect($('fCsr'), 'CSR', [...new Set(open.map((j) => M.person('csr', j.csrNo)))].sort(), f.csr);
+    fillSelect($('fCsr'), 'CSR', [...new Set(open.map((j) => M.csrOf(j)))].sort(), f.csr);
     fillSelect($('fVia'), 'Ship via', [...new Set(open.map((j) => M.shipVia(j)).filter(Boolean))].sort(), f.via);
 
     const q = f.q.trim().toLowerCase();
@@ -159,9 +159,9 @@
       (f.bucket === 'all' || M.bucket(j, today) === f.bucket) &&
       (!f.date || (j.dateDue && M.workdayOf(j.dateDue) === f.date)) &&
       (!f.stage || stageOf(j) === f.stage) &&
-      (!f.csr || M.person('csr', j.csrNo) === f.csr) &&
+      (!f.csr || M.csrOf(j) === f.csr) &&
       (!f.via || M.shipVia(j) === f.via) &&
-      (!q || [j.jobNo, j.title, j.customer, j.po, j.buyer, j.shipTo, M.shipVia(j)].join(' ').toLowerCase().includes(q)));
+      (!q || [j.jobNo, j.title, j.customer, j.po, j.buyer, j.shipTo, M.shipVia(j), M.isAtlas(j) ? 'atlas' : 'printers plan'].join(' ').toLowerCase().includes(q)));
     const col = COLS.find((c) => c.key === sort.key);
     rows.sort((a, b) => {
       // Need-by column: no NB first, then by date, then due date.
@@ -177,25 +177,26 @@
       const b = M.bucket(j, today);
       const rp = M.isReprint(j);
       const hot = M.nbHot(j, today);
-      const tr = `<tr class="job${rp ? ' reprint' : ''}${hot ? ' nb-hot' : ''}" data-j="${j.jobNo}">
-        <td class="num">${j.jobNo}</td>
+      const tr = `<tr class="job${rp ? ' reprint' : ''}${hot ? ' nb-hot' : ''}" data-j="${M.esc(M.jobKey(j))}">
+        <td class="num">${j.jobNo}${M.isAtlas(j) ? M.ATLAS_BADGE : ''}</td>
         <td><span class="due ${b === 'late' || b === 'today' ? b : ''}">${M.fmtDay(j.dateDue)}</span> ${M.dueBadge(j, today)}</td>
         <td class="nb-cell">${hot ? `<span class="nb-flag">${M.NB_HOT_ICON}${hot}</span>` : M.needBy(j) ? `<b>${M.fmtDay(M.needBy(j))}</b>` : `<span class="muted">${M.esc(M.needByText(j)) || '—'}</span>`}</td>
         <td class="title"><div>${rp ? M.REPRINT_BADGE : ''}${M.esc(j.title)}</div><div class="cust">${M.esc(j.customer)}</div></td>
         <td class="num right">${M.fmtQty(M.jobQty(j))}</td>
         <td class="via">${M.esc(M.shipVia(j)) || '<span class="muted">—</span>'}</td>
         <td>${M.jobStageChip(j)}</td>
-        <td>${M.esc(M.person('csr', j.csrNo))}</td>
+        <td>${M.esc(M.csrOf(j))}</td>
         <td class="num right">${M.money(M.amount(j))}</td>
       </tr>`;
-      return tr + (expanded.has(j.jobNo) ? detail(j) : '');
+      return tr + (expanded.has(M.jobKey(j)) ? detail(j) : '');
     }).join('') || `<tr><td colspan="9" class="hint" style="padding:20px">No jobs match.</td></tr>`;
   }
 
   function detail(j) {
     const lines = (j.items || []).map((i) => {
       const what = i.serNo === 0 ? `<b>${M.esc(i.description || 'Item ' + i.itemNo)}</b>${i.qty ? ' · qty ' + i.qty.toLocaleString() : ''}` : `${M.esc(M.lab('service', i.serNo, 'Service'))}${i.empNo ? ' · ' + M.esc(M.person('employee', i.empNo)) : ''}`;
-      return `<div class="item"><span class="k">Line ${i.itemNo}${i.subNo ? '.' + i.subNo : ''}</span><span>${what}</span>${i.serNo === 0 && M.ignored(i.status) ? '' : M.stageChip(M.lab('itemStatus', i.status, 'Status'))}</div>`;
+      const steps = i.steps && i.steps.length ? `<span class="muted" style="font-size:11px">${i.steps.map(M.esc).join(' · ')}</span>` : '';
+      return `<div class="item"><span class="k">Line ${i.itemNo}${i.subNo ? '.' + i.subNo : ''}</span><span>${what}${i.press ? ' · ' + M.esc(i.press) : ''} ${steps}</span>${i.serNo === 0 && M.ignored(i.status) ? '' : M.stageChip(M.lab('itemStatus', i.status, 'Status'))}</div>`;
     }).join('');
     return `<tr class="detail"><td colspan="9">
       <div style="display:flex;gap:28px;flex-wrap:wrap;font-size:12px;color:var(--text-2)">
@@ -203,10 +204,10 @@
         ${j.po ? `<span>PO <b>${M.esc(j.po)}</b></span>` : ''}
         ${j.shipTo ? `<span>Ship to <b>${M.esc(j.shipTo)}</b>${j.shipAttention ? ' · ' + M.esc(j.shipAttention) : ''}</span>` : ''}
         ${j.fromJobNo ? `<span>From job <b>#${j.fromJobNo}</b></span>` : ''}
-        <span>Work order ${j.workOrderPrinted ? 'printed' : '<b>not printed</b>'}</span>
+        ${M.isAtlas(j) ? `<span>From <b>Atlas</b>${j.repName ? ' · sales rep ' + M.esc(j.repName) : ''}</span>` : `<span>Work order ${j.workOrderPrinted ? 'printed' : '<b>not printed</b>'}</span>`}
       </div>
       <div class="items">${lines}</div>
-      ${j.workOrderNote ? `<div style="font-size:12px;color:var(--muted)">Work order note</div><pre>${M.esc(j.workOrderNote)}</pre>` : ''}
+      ${j.workOrderNote ? `<div style="font-size:12px;color:var(--muted)">${M.isAtlas(j) ? 'Notes' : 'Work order note'}</div><pre>${M.esc(j.workOrderNote)}</pre>` : ''}
     </td></tr>`;
   }
 
@@ -236,7 +237,7 @@
     const th = e.target.closest('th[data-k]');
     if (th) { sort = sort.key === th.dataset.k ? { key: sort.key, dir: -sort.dir } : { key: th.dataset.k, dir: 1 }; render(); return; }
     const tr = e.target.closest('tr.job');
-    if (tr) { const n = +tr.dataset.j; expanded.has(n) ? expanded.delete(n) : expanded.add(n); render(); }
+    if (tr) { const n = tr.dataset.j; expanded.has(n) ? expanded.delete(n) : expanded.add(n); render(); }
   });
   document.addEventListener('keydown', (e) => { if (e.key === 'Enter' && e.target.matches('.kpi[data-bucket]')) e.target.click(); });
   $('q').addEventListener('input', (e) => { f.q = e.target.value; render(); });
