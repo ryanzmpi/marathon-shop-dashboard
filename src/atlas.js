@@ -5,9 +5,27 @@
 // Each Atlas order is turned into the same shape as a Printer's Plan job, so it shows up in
 // every list, chart, gauge and TV. Atlas orders carry source: 'atlas' and key: 'A<number>'
 // (order numbers can repeat between the two systems, so the key keeps them apart).
+const fs = require('fs');
+const path = require('path');
 const cfg = require('./config');
 
-const state = { orders: [], open: [], shipped: [], lastOkAt: null, lastError: null, lastErrorAt: null, fetching: false };
+// The last good copy of Atlas orders is saved here, so the dashboard keeps showing it while the
+// Atlas Dashboard (or GoMake behind it) is unreachable — including right after a redeploy.
+const CACHE_FILE = path.join(cfg.dataDir, 'atlas-cache.json');
+
+const state = { orders: [], open: [], shipped: [], lastOkAt: null, lastError: null, lastErrorAt: null, fetching: false, lastTryAt: 0, failures: 0 };
+try {
+  const saved = JSON.parse(fs.readFileSync(CACHE_FILE, 'utf8'));
+  Object.assign(state, { open: saved.open || [], shipped: saved.shipped || [], orders: saved.orders || 0, lastOkAt: saved.lastOkAt || null });
+  console.log(`[atlas] loaded last known Atlas data from ${state.lastOkAt}: ${state.open.length} open orders`);
+} catch { /* first run */ }
+function saveCache() {
+  try {
+    fs.mkdirSync(cfg.dataDir, { recursive: true });
+    fs.writeFileSync(CACHE_FILE + '.tmp', JSON.stringify({ open: state.open, shipped: state.shipped, orders: state.orders, lastOkAt: state.lastOkAt }));
+    fs.renameSync(CACHE_FILE + '.tmp', CACHE_FILE);
+  } catch (err) { console.error('[atlas] could not save cache:', err.message); }
+}
 
 // Atlas job statuses → dashboard stage codes. These codes have names in labels.itemStatus
 // (105 "Not Approved", 106 "Pre Press", …) so they sort and colour like Printer's Plan stages.
@@ -105,8 +123,13 @@ async function getJson(path) {
 }
 
 // Pull every order page, then the job steps for each open order. Called once per scan cycle.
+// How often to ask the Atlas Dashboard (ATLAS_REFRESH_SECONDS, default 150 s — it only refreshes
+// from GoMake every 150 s anyway, and answers us from its cache, so we add no GoMake calls). After a failure, wait longer each time (up to 15 min).
 async function refresh() {
   if (!cfg.atlasUrl || state.fetching) return;
+  const wait = state.failures ? Math.min(900, cfg.atlasRefreshSeconds * 2 ** (state.failures - 1)) : cfg.atlasRefreshSeconds;
+  if (Date.now() - state.lastTryAt < wait * 1000 - 5000) return;
+  state.lastTryAt = Date.now();
   state.fetching = true;
   try {
     let all = [];
@@ -128,10 +151,8 @@ async function refresh() {
     }));
     const jobs = [];
     for (const o of open) {
-      if (jobsById[o.id] === null) { // couldn't read its steps this time: keep the previous version
-        const prev = state.open.find((j) => j.atlasId === o.id);
-        if (prev) { jobs.push(prev); continue; }
-      }
+      const prev = state.open.find((j) => j.atlasId === o.id);
+      if (jobsById[o.id] === null && prev) { jobs.push(prev); continue; } // couldn't read steps this time: keep the last version
       jobs.push(normalize(o, jobsById[o.id] || []));
     }
     state.open = jobs.filter((j) => !j.dateShipped);
@@ -142,9 +163,13 @@ async function refresh() {
     ];
     state.orders = all.length;
     state.lastOkAt = new Date().toISOString();
+    state.failures = 0;
+    saveCache();
   } catch (err) {
+    // Keep showing the last good data; just note the error and back off.
     state.lastError = err.message;
     state.lastErrorAt = new Date().toISOString();
+    state.failures++;
     console.error('[atlas]', err.message);
   } finally {
     state.fetching = false;
@@ -152,7 +177,7 @@ async function refresh() {
 }
 
 function status() {
-  return { enabled: !!cfg.atlasUrl, lastOkAt: state.lastOkAt, lastError: state.lastError, lastErrorAt: state.lastErrorAt, open: state.open.length, orders: state.orders };
+  return { enabled: !!cfg.atlasUrl, stale: !!(state.lastErrorAt && (!state.lastOkAt || state.lastErrorAt > state.lastOkAt)), lastOkAt: state.lastOkAt, lastError: state.lastError, lastErrorAt: state.lastErrorAt, open: state.open.length, orders: state.orders };
 }
 
 module.exports = { refresh, status, openJobs: () => state.open, shippedJobs: () => state.shipped, normalize, stageOf, CODE };

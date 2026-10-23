@@ -25,6 +25,8 @@ module.exports = {
   // Atlas (GoMake) orders come from the Atlas Dashboard's JSON API. Set ATLAS_URL=off to turn it off.
   atlasUrl: (process.env.ATLAS_URL === 'off' ? '' : process.env.ATLAS_URL || 'https://gomake-dashboard-production.up.railway.app').replace(/\/+$/, ''),
 
+  atlasRefreshSeconds: num(process.env.ATLAS_REFRESH_SECONDS, 150),
+
   timeZone: process.env.TZ_NAME || 'America/Los_Angeles',
 
   // Where scan results are cached between restarts (mount a Railway volume here).

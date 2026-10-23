@@ -391,7 +391,11 @@ const MSD = (() => {
     let cls = '', text = 'Live';
     const at = scan.atlas;
     if (scan.lastErrorAt && (!scan.lastOkAt || scan.lastErrorAt > scan.lastOkAt)) { cls = 'err'; text = 'Can’t reach Printer’s Plan'; }
-    else if (at && at.enabled && at.lastErrorAt && (!at.lastOkAt || at.lastErrorAt > at.lastOkAt)) { cls = 'err'; text = 'Can’t reach Atlas'; }
+    else if (at && at.enabled && at.stale) {
+      const asOf = at.lastOkAt ? new Date(at.lastOkAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : '';
+      cls = at.lastOkAt ? 'warn' : 'err';
+      text = at.lastOkAt ? `Atlas offline · showing ${asOf} data` : 'Can’t reach Atlas';
+    }
     else if (bf && !bf.done) { cls = 'warn'; text = `Initial scan ${Math.round(bf.progress * 100)}%`; }
     else if (!scan.lastCycleAt) { cls = 'warn'; text = 'Starting…'; }
     const when = scan.lastCycleAt ? new Date(scan.lastCycleAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : '';
