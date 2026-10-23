@@ -33,7 +33,7 @@ const orders = ORDERS.map((o, i) => ({
   createdDate: created(o.closed ? 10 : i % 3),
   dueDate: o.due == null ? null : due(o.due),
   readyDate: o.ready != null ? utc(new Date(now - o.ready * 86400000)) : null,
-  number: o.n, customerName: o.cust, contactName: o.cust, agentName: 'Ryan Zirk', customerSupportRepresentativeName: i === 2 ? 'Jen Smith' : null,
+  number: o.n, customerName: o.cust, contactName: o.cust, agentName: i % 4 === 1 ? 'Shawn McCaffrey' : 'Ryan Zirk', csr: i === 2 ? 'Jen' : '', customerSupportRepresentativeName: null,
   notes: o.notes || null, statusTitleText: o.closed ? 'Order.Closed' : 'Order.Open', deliveryStatus: o.closed ? 3 : 1,
   totalPrice: o.total, totalPayment: o.total, worksNames: o.works, totalOrderQuantity: o.qty, isInProofingProcess: !!o.proof, internalNotes: null,
 }));

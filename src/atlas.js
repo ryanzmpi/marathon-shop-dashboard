@@ -78,8 +78,10 @@ function normalize(o, jobs) {
     buyer: o.contactName || '',
     po: o.purchaseOrderNumber || '',
     csrNo: 0,
-    csrName: firstName(o.customerSupportRepresentativeName),
-    repName: o.agentName || '',
+    // CSR = Atlas's Sales Rep. The Atlas Dashboard adds it as `csr` (first name); GoMake's own
+    // order list carries the same person as agentName ("Ryan Zirk"), used when csr is blank.
+    csrName: firstName(o.csr) || firstName(o.customerSupportRepresentativeName) || firstName(o.agentName),
+    repName: o.agentName || o.csr || '',
     dateIn: utcToLocalDate(o.createdDate),
     dateDue: o.dueDate ? String(o.dueDate).slice(0, 10) : null,
     dateShipped: ready,
