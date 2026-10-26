@@ -27,6 +27,11 @@ module.exports = {
 
   atlasRefreshSeconds: num(process.env.ATLAS_REFRESH_SECONDS, 150),
 
+  // Shop hours, for "work hours" in the stage history (Mon–Fri 8am–4pm by default, Pacific).
+  workStartHour: num(process.env.WORK_START_HOUR, 8),
+  workEndHour: num(process.env.WORK_END_HOUR, 16),
+  workDays: (process.env.WORK_DAYS || '1,2,3,4,5').split(',').map(Number), // 0 = Sunday … 6 = Saturday
+
   timeZone: process.env.TZ_NAME || 'America/Los_Angeles',
 
   // Where scan results are cached between restarts (mount a Railway volume here).

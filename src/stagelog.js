@@ -110,6 +110,31 @@ function localMidnightIso(date, addDays = 0) {
   const offsetMs = asLocal - new Date(ymd + 'T12:00:00Z');
   return new Date(new Date(ymd + 'T00:00:00Z').getTime() - offsetMs).toISOString();
 }
+// Hours between two times counting only shop hours (cfg.workDays, cfg.workStartHour–workEndHour,
+// Pacific). A job that waits from Friday 3pm to Monday 9am counts as 2 work hours, not 66.
+const dow = (ymd) => new Date(ymd + 'T12:00:00Z').getUTCDay();
+const nextDay = (ymd) => { const d = new Date(ymd + 'T12:00:00Z'); d.setUTCDate(d.getUTCDate() + 1); return d.toISOString().slice(0, 10); };
+function workHours(a, b) {
+  if (!a || !b) return '';
+  const A = new Date(a).getTime(), B = new Date(b).getTime();
+  if (!(B > A)) return 0;
+  let ms = 0;
+  for (let d = local(a).slice(0, 10), end = local(b).slice(0, 10); d <= end; d = nextDay(d)) {
+    if (!cfg.workDays.includes(dow(d))) continue;
+    const mid = new Date(localMidnightIso(d)).getTime();
+    const open = mid + cfg.workStartHour * 3600000, close = mid + cfg.workEndHour * 3600000;
+    ms += Math.max(0, Math.min(B, close) - Math.max(A, open));
+  }
+  return Math.round((ms / 3600000) * 100) / 100;
+}
+// Working days between two dates (for hand-entered dates that have no time): Mon 10/26 → Wed 10/28 = 2.
+function workDays(x, y) {
+  if (!x || !y) return '';
+  if (y < x) return -workDays(y, x);
+  let n = 0;
+  for (let d = x; d < y; d = nextDay(d)) if (cfg.workDays.includes(dow(nextDay(d)))) n++;
+  return n;
+}
 const hours = (a, b) => (a && b ? Math.round(((new Date(b) - new Date(a)) / 3600000) * 100) / 100 : '');
 const csrName = (n) => (labels.csr || {})[String(n)] || (n ? `#${n}` : '');
 const inRange = (e, from, to) => (!from || e.at >= from) && (!to || e.at < to);
@@ -170,6 +195,12 @@ function summary({ from, to } = {}) {
     out = out.filter((r) => [r.firstSeenAt, r.lastChangeAt].some((t) => t && (!from || t >= from) && (!to || t < to))
       || Object.keys(MILESTONES).some((k) => r[k + 'Date'] && (!fromD || r[k + 'Date'] >= fromD) && (!toD || r[k + 'Date'] <= toD)));
   }
+  for (const r of out) {
+    r.workPrePressToPress = workHours(r.prePressAt, r.pressAt);
+    r.workInPress = workHours(r.pressAt, r.leftPressAt);
+    r.workDaysPrePressToPress = days(r, 'prePress', 'press');
+    r.workDaysInPress = days(r, 'press', 'leftPress');
+  }
   return out.sort((a, b) => String(a.job).localeCompare(String(b.job), undefined, { numeric: true }) || String(a.item).localeCompare(String(b.item), undefined, { numeric: true }));
 }
 
@@ -192,12 +223,12 @@ const when = (r, k) => (r[k + 'At'] ? local(r[k + 'At']) : r[k + 'Date'] || '');
 // Calendar days between two milestones (works for hand-entered dates too).
 function days(r, a, b) {
   const x = when(r, a).slice(0, 10), y = when(r, b).slice(0, 10);
-  return x && y ? Math.round((new Date(y + 'T12:00:00Z') - new Date(x + 'T12:00:00Z')) / 86400000) : '';
+  return x && y ? workDays(x, y) : '';
 }
 function summaryCsv(opts) {
   return toCsv(
-    ['Job', 'Item', 'Description', 'Customer', 'Title', 'CSR', 'Press', 'First seen', 'First seen in stage', 'Approved (left Not Approved)', 'Entered Pre Press', 'Entered Press', 'Left Press', 'Left Press to', 'Ship date entered', 'Hours Pre Press to Press', 'Hours in Press stage', 'Days Pre Press to Press', 'Days in Press stage', 'Current/last stage', 'Times sent back to Not Approved', 'Dates entered by hand (no time)'],
-    summary(opts).map((r) => [r.job, r.item, r.description, r.customer, r.title, r.csrName || csrName(r.csrNo), r.press, local(r.firstSeenAt), r.firstStage, when(r, 'approved'), when(r, 'prePress'), when(r, 'press'), when(r, 'leftPress'), r.leftPressTo || '', local(r.shippedAt), hours(r.prePressAt, r.pressAt), hours(r.pressAt, r.leftPressAt), days(r, 'prePress', 'press'), days(r, 'press', 'leftPress'), r.stage, r.sentBack || 0, (r.manualDates || []).join(', ')]),
+    ['Job', 'Item', 'Description', 'Customer', 'Title', 'CSR', 'Press', 'First seen', 'First seen in stage', 'Approved (left Not Approved)', 'Entered Pre Press', 'Entered Press', 'Left Press', 'Left Press to', 'Ship date entered', 'Work hours Pre Press to Press', 'Work hours in Press stage', 'Clock hours Pre Press to Press', 'Clock hours in Press stage', 'Work days Pre Press to Press', 'Work days in Press stage', 'Current/last stage', 'Times sent back to Not Approved', 'Dates entered by hand (no time)'],
+    summary(opts).map((r) => [r.job, r.item, r.description, r.customer, r.title, r.csrName || csrName(r.csrNo), r.press, local(r.firstSeenAt), r.firstStage, when(r, 'approved'), when(r, 'prePress'), when(r, 'press'), when(r, 'leftPress'), r.leftPressTo || '', local(r.shippedAt), workHours(r.prePressAt, r.pressAt), workHours(r.pressAt, r.leftPressAt), hours(r.prePressAt, r.pressAt), hours(r.pressAt, r.leftPressAt), days(r, 'prePress', 'press'), days(r, 'press', 'leftPress'), r.stage, r.sentBack || 0, (r.manualDates || []).join(', ')]),
   );
 }
 
@@ -281,4 +312,4 @@ function importManual(text) {
 function listManual() { return Object.values(manual).sort((a, b) => a.job - b.job || a.milestone.localeCompare(b.milestone)); }
 function removeManual(key) { if (key === '*') manual = {}; else delete manual[key]; saveManual(); }
 
-module.exports = { importManual, listManual, removeManual, localMidnightIso, init, observe, closed, list, summary, eventsCsv, summaryCsv, local, count: () => events.length, since: () => (events[0] ? events[0].at : null) };
+module.exports = { workHours, workDays, importManual, listManual, removeManual, localMidnightIso, init, observe, closed, list, summary, eventsCsv, summaryCsv, local, count: () => events.length, since: () => (events[0] ? events[0].at : null) };

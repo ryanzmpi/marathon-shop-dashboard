@@ -56,7 +56,7 @@
     <span class="spacer"></span>
     <a href="/">← Dashboard</a>
   </div>
-  <p class="lead" style="margin-bottom:8px">The dashboard records when each item's stage changes in Printer's Plan or Atlas (Atlas orders show as A268506 and so on). It checks every open job about once a minute, so each time is when the change was <b>seen</b> and is accurate to about a minute. The events download also has a "Changed after" column, the last time the old stage was seen. The real change happened between the two times. Times are Pacific.</p>
+  <p class="lead" style="margin-bottom:8px">The dashboard records when each item's stage changes in Printer's Plan or Atlas (Atlas orders show as A268506 and so on). It checks every open job about once a minute, so each time is when the change was <b>seen</b> and is accurate to about a minute. The events download also has a "Changed after" column, the last time the old stage was seen. The real change happened between the two times. Times are Pacific. Wait times count <b>shop hours only</b> (Mon–Fri, 8am–4pm), so a job that waits from Friday 3pm to Monday 9am shows 2 hours; hover a wait time to see the plain clock time. Waits over one work day (8 hours) are highlighted.</p>
 
   <div class="bar">
     <div class="quick" id="quick"></div>
@@ -137,22 +137,25 @@
     const q = $('q').value.trim().toLowerCase();
     const match = (r) => !q || [r.job, r.item, r.customer, r.title, r.description, r.press].join(' ').toLowerCase().includes(q);
     if (tab === 'summary') {
-      $('th').innerHTML = `<tr><th>Job</th><th>Item</th><th>Customer / title</th><th>Press</th><th class="t">Approved</th><th class="t">Entered Pre Press</th><th class="t">Entered Press</th><th class="t">Left Press</th><th>Pre Press → Press</th><th>In Press stage</th><th>Now</th></tr>`;
+      $('th').innerHTML = `<tr><th>Job</th><th>Item</th><th>Customer / title</th><th>Press</th><th class="t">Approved</th><th class="t">Entered Pre Press</th><th class="t">Entered Press</th><th class="t">Left Press</th><th title="Shop hours only: Mon–Fri 8am–4pm">Pre Press → Press<br><small class="unk">work hrs</small></th><th title="Shop hours only: Mon–Fri 8am–4pm">In Press stage<br><small class="unk">work hrs</small></th><th>Now</th></tr>`;
       const rows = data.summary.filter(match).sort((a, b) => (b.lastChangeAt || b.pressDate || b.prePressDate || b.approvedDate || '').localeCompare(a.lastChangeAt || a.pressDate || a.prePressDate || a.approvedDate || '') || b.job - a.job);
       $('n').textContent = rows.length + ' items';
       // recorded time, or a hand-entered date (shown in italics, no time)
       const cell = (r, k) => (r[k + 'At'] ? fmt(r[k + 'At']) : r[k + 'Date'] ? `<span class="hand" title="Entered by hand from Printer's Plan (date only)">${fmtD(r[k + 'Date'])}</span>` : '<span class="unk">—</span>');
       const dayGap = (r, a, b) => { const x = r[a + 'At'] ? ymd(new Date(r[a + 'At'])) : r[a + 'Date'], y = r[b + 'At'] ? ymd(new Date(r[b + 'At'])) : r[b + 'Date']; return x && y && !(r[a + 'At'] && r[b + 'At']) ? Math.round((new Date(y) - new Date(x)) / 86400000) : null; };
-      const gap = (h, d) => (h != null ? fmtH(h) : d != null ? `<span class="hand">${d} day${d === 1 ? '' : 's'}</span>` : '');
+      // Work hours (shop hours only) with the plain clock time in the tooltip; hand-entered dates show work days.
+      const gap = (w, h, d) => (h != null ? `<span title="${fmtH(h)} on the clock">${fmtH(w)}</span>` : d != null ? `<span class="hand">${d} work day${d === 1 ? '' : 's'}</span>` : '');
       $('tb').innerHTML = rows.map((r) => {
         const pp = hrs(r.prePressAt, r.pressAt), ip = hrs(r.pressAt, r.leftPressAt);
-        const ppd = dayGap(r, 'prePress', 'press'), ipd = dayGap(r, 'press', 'leftPress');
+        const ppd = r.prePressAt && r.pressAt ? null : r.workDaysPrePressToPress === '' ? null : r.workDaysPrePressToPress;
+        const ipd = r.pressAt && r.leftPressAt ? null : r.workDaysInPress === '' ? null : r.workDaysInPress;
+        const ppw = r.workPrePressToPress === '' ? null : r.workPrePressToPress, ipw = r.workInPress === '' ? null : r.workInPress;
         return `<tr><td class="num">${r.job}</td><td class="num">${r.item}</td>
           <td class="title"><div>${esc(r.description || r.title)}</div><div class="cust">${esc(r.customer)}${r.title && r.description && r.title !== r.description ? ' · ' + esc(r.title) : ''}</div></td>
           <td>${esc(r.press) || '<span class="unk">—</span>'}</td>
           <td class="t">${cell(r, 'approved')}</td><td class="t">${cell(r, 'prePress')}</td><td class="t">${cell(r, 'press')}</td>
           <td class="t">${cell(r, 'leftPress')}${r.leftPressTo ? ` <span class="unk">→ ${esc(r.leftPressTo)}</span>` : ''}</td>
-          <td class="h${pp > 24 || ppd > 1 ? ' long' : ''}">${gap(pp, ppd)}</td><td class="h${ip > 24 || ipd > 1 ? ' long' : ''}">${gap(ip, ipd)}</td>
+          <td class="h${ppw > 8 || ppd > 1 ? ' long' : ''}">${gap(ppw, pp, ppd)}</td><td class="h${ipw > 8 || ipd > 1 ? ' long' : ''}">${gap(ipw, ip, ipd)}</td>
           <td>${esc(r.stage)}${r.sentBack ? `<div class="unk" style="font-size:11px">sent back to Not Approved ${r.sentBack}×</div>` : ''}${r.firstSeenKind === 'first-seen' ? `<div class="unk" style="font-size:11px">first seen ${fmt(r.firstSeenAt)} in ${esc(r.firstStage)}</div>` : ''}</td></tr>`;
       }).join('') || `<tr><td colspan="11" class="empty">Nothing recorded in this range yet. Changes show up here as they happen.</td></tr>`;
     } else {
