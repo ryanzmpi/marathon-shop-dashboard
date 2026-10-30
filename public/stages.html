@@ -99,6 +99,12 @@
   const TZ = 'America/Los_Angeles';
   const fmt = (iso) => iso ? new Date(iso).toLocaleString('en-US', { timeZone: data?.timeZone || TZ, month: 'numeric', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : '';
   const hrs = (a, b) => (a && b ? (new Date(b) - new Date(a)) / 3600000 : null);
+  // Due date as "Thu 10/29".
+  const dueCell = (d) => {
+    if (!d) return '<span class="unk">—</span>';
+    const wd = new Date(d + 'T12:00:00Z').toLocaleDateString('en-US', { weekday: 'short', timeZone: 'UTC' });
+    return `${wd} ${fmtD(d)}`;
+  };
   const fmtD = (d) => { const [y, m, dd] = d.split('-'); return `${+m}/${+dd}`; };
   const fmtH = (h) => h == null ? '' : h < 1 ? Math.round(h * 60) + ' min' : h.toFixed(1) + ' h';
   const csr = (n) => (data.labels.csr || {})[String(n)] || (n ? '#' + n : '');
@@ -135,9 +141,9 @@
   function render() {
     if (!data) return;
     const q = $('q').value.trim().toLowerCase();
-    const match = (r) => !q || [r.job, r.item, r.customer, r.title, r.description, r.press].join(' ').toLowerCase().includes(q);
+    const match = (r) => !q || [r.job, r.item, r.dateDue, r.customer, r.title, r.description, r.press].join(' ').toLowerCase().includes(q);
     if (tab === 'summary') {
-      $('th').innerHTML = `<tr><th>Job</th><th>Item</th><th>Customer / title</th><th>Press</th><th class="t">Approved</th><th class="t">Entered Pre Press</th><th class="t">Entered Press</th><th class="t">Left Press</th><th title="Shop hours only: Mon–Fri 8am–4pm">Pre Press → Press<br><small class="unk">work hrs</small></th><th title="Shop hours only: Mon–Fri 8am–4pm">In Press stage<br><small class="unk">work hrs</small></th><th>Now</th></tr>`;
+      $('th').innerHTML = `<tr><th>Job</th><th>Item</th><th>Customer / title</th><th class="t">Due</th><th>Press</th><th class="t">Approved</th><th class="t">Entered Pre Press</th><th class="t">Entered Press</th><th class="t">Left Press</th><th title="Shop hours only: Mon–Fri 8am–4pm">Pre Press → Press<br><small class="unk">work hrs</small></th><th title="Shop hours only: Mon–Fri 8am–4pm">In Press stage<br><small class="unk">work hrs</small></th><th>Now</th></tr>`;
       const rows = data.summary.filter(match).sort((a, b) => (b.lastChangeAt || b.pressDate || b.prePressDate || b.approvedDate || '').localeCompare(a.lastChangeAt || a.pressDate || a.prePressDate || a.approvedDate || '') || b.job - a.job);
       $('n').textContent = rows.length + ' items';
       // recorded time, or a hand-entered date (shown in italics, no time)
@@ -152,21 +158,23 @@
         const ppw = r.workPrePressToPress === '' ? null : r.workPrePressToPress, ipw = r.workInPress === '' ? null : r.workInPress;
         return `<tr><td class="num">${r.job}</td><td class="num">${r.item}</td>
           <td class="title"><div>${esc(r.description || r.title)}</div><div class="cust">${esc(r.customer)}${r.title && r.description && r.title !== r.description ? ' · ' + esc(r.title) : ''}</div></td>
+          <td class="t">${dueCell(r.dateDue)}</td>
           <td>${esc(r.press) || '<span class="unk">—</span>'}</td>
           <td class="t">${cell(r, 'approved')}</td><td class="t">${cell(r, 'prePress')}</td><td class="t">${cell(r, 'press')}</td>
           <td class="t">${cell(r, 'leftPress')}${r.leftPressTo ? ` <span class="unk">→ ${esc(r.leftPressTo)}</span>` : ''}</td>
           <td class="h${ppw > 8 || ppd > 1 ? ' long' : ''}">${gap(ppw, pp, ppd)}</td><td class="h${ipw > 8 || ipd > 1 ? ' long' : ''}">${gap(ipw, ip, ipd)}</td>
           <td>${esc(r.stage)}${r.sentBack ? `<div class="unk" style="font-size:11px">sent back to Not Approved ${r.sentBack}×</div>` : ''}${r.firstSeenKind === 'first-seen' ? `<div class="unk" style="font-size:11px">first seen ${fmt(r.firstSeenAt)} in ${esc(r.firstStage)}</div>` : ''}</td></tr>`;
-      }).join('') || `<tr><td colspan="11" class="empty">Nothing recorded in this range yet. Changes show up here as they happen.</td></tr>`;
+      }).join('') || `<tr><td colspan="12" class="empty">Nothing recorded in this range yet. Changes show up here as they happen.</td></tr>`;
     } else {
       const KIND = { change: '', new: 'New job', 'first-seen': 'First seen', 'item-added': 'Item added', shipped: 'Ship date', closed: 'Left open list' };
-      $('th').innerHTML = `<tr><th class="t">Seen at</th><th>Job</th><th>Item</th><th>Customer / title</th><th>From</th><th>To</th><th>Press</th><th>CSR</th></tr>`;
+      $('th').innerHTML = `<tr><th class="t">Seen at</th><th>Job</th><th>Item</th><th>Customer / title</th><th class="t">Due</th><th>From</th><th>To</th><th>Press</th><th>CSR</th></tr>`;
       const rows = data.events.filter(match).slice().reverse();
       $('n').textContent = rows.length + ' events' + (data.events.length >= 2000 ? ' (latest 2,000; download for all)' : '');
       $('tb').innerHTML = rows.map((e) => `<tr><td class="t">${fmt(e.at)}</td><td class="num">${e.job}</td><td class="num">${e.item ?? ''}</td>
         <td class="title"><div>${esc(e.description || e.title)}</div><div class="cust">${esc(e.customer)}</div></td>
-        <td>${e.kind === 'change' ? esc(e.fromName) : `<span class="unk">${KIND[e.kind] || ''}</span>`}</td><td><b>${esc(e.toName)}</b></td><td>${esc(e.press)}</td><td>${esc(csr(e.csrNo))}</td></tr>`).join('')
-        || `<tr><td colspan="8" class="empty">Nothing recorded in this range yet.</td></tr>`;
+        <td class="t">${dueCell(e.dateDue)}</td>
+        <td>${e.kind === 'change' ? esc(e.fromName) : `<span class="unk">${KIND[e.kind] || ''}</span>`}</td><td><b>${esc(e.toName)}</b></td><td>${esc(e.press)}</td><td>${esc(e.csrName || csr(e.csrNo))}</td></tr>`).join('')
+        || `<tr><td colspan="9" class="empty">Nothing recorded in this range yet.</td></tr>`;
     }
   }
   const MS = { approved: 'Approved', prePress: 'Pre Press', press: 'Press', leftPress: 'Left Press' };

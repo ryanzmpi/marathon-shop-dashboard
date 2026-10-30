@@ -349,7 +349,7 @@ function snapshot() {
 function jobInfo(jobNo) {
   const k = String(jobNo);
   const j = k.startsWith('A') ? [...atlas.openJobs(), ...atlas.shippedJobs()].find((x) => x.key === k) : state.open[jobNo] || state.invoiced[jobNo];
-  return j ? { title: j.title, customer: j.customer, csrNo: j.csrNo } : null;
+  return j ? { title: j.title, customer: j.customer, csrNo: j.csrNo, csrName: j.csrName, dateDue: j.dateDue } : null;
 }
 
 module.exports = { start, snapshot, todayLocal, jobInfo };

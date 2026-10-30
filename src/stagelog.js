@@ -66,7 +66,7 @@ function observe(job, { isNew = false } = {}) {
   const id = job.key || job.jobNo; // Atlas orders use "A268506" so they never mix with Printer's Plan numbers
   const now = new Date().toISOString();
   const prev = last[id];
-  const base = { job: id, title: job.title, customer: job.customer, csrNo: job.csrNo, csrName: job.csrName };
+  const base = { job: id, title: job.title, customer: job.customer, csrNo: job.csrNo, csrName: job.csrName, dateDue: job.dateDue || null };
   const items = {};
   for (const i of job.items || []) {
     if (i.serNo !== 0) continue;
@@ -80,7 +80,7 @@ function observe(job, { isNew = false } = {}) {
   }
   const shipped = !!job.dateShipped;
   if (prev && shipped && !prev.shipped) add({ ...base, at: now, prevSeenAt: prev.seenAt, kind: 'shipped', item: null, description: '', from: null, fromName: '', to: null, toName: 'Ship date entered', press: '' });
-  last[id] = { seenAt: now, shipped, items, title: job.title, customer: job.customer, csrNo: job.csrNo, csrName: job.csrName };
+  last[id] = { seenAt: now, shipped, items, title: job.title, customer: job.customer, csrNo: job.csrNo, csrName: job.csrName, dateDue: job.dateDue || null };
   flush();
 }
 
@@ -139,8 +139,14 @@ const hours = (a, b) => (a && b ? Math.round(((new Date(b) - new Date(a)) / 3600
 const csrName = (n) => (labels.csr || {})[String(n)] || (n ? `#${n}` : '');
 const inRange = (e, from, to) => (!from || e.at >= from) && (!to || e.at < to);
 
+// Due date: the job's current due date when the dashboard still knows the job, otherwise the one
+// recorded with the event (events from before this was added have none).
+function dueDate(job, fallback) {
+  const info = jobInfo(job);
+  return (info && info.dateDue) || fallback || '';
+}
 function list({ from, to } = {}) {
-  return events.filter((e) => inRange(e, from, to));
+  return events.filter((e) => inRange(e, from, to)).map((e) => ({ ...e, dateDue: dueDate(e.job, e.dateDue) }));
 }
 
 // One row per job item, with when it was first seen and when it entered each stage.
@@ -155,7 +161,8 @@ function summary({ from, to } = {}) {
     }
     const k = e.job + '/' + e.item;
     let r = rows.get(k);
-    if (!r) { r = { job: e.job, item: e.item, description: e.description, title: e.title, customer: e.customer, csrNo: e.csrNo, csrName: e.csrName, firstSeenAt: e.at, firstSeenKind: e.kind, firstStage: e.toName }; rows.set(k, r); }
+    if (!r) { r = { job: e.job, item: e.item, description: e.description, title: e.title, customer: e.customer, csrNo: e.csrNo, csrName: e.csrName, dateDue: e.dateDue, firstSeenAt: e.at, firstSeenKind: e.kind, firstStage: e.toName }; rows.set(k, r); }
+    if (e.dateDue) r.dateDue = e.dateDue;
     r.stage = e.toName; r.press = e.press || r.press; r.description = e.description || r.description; r.lastChangeAt = e.at;
     // A brand-new job seen within a minute of being entered counts as entering its first stage then.
     // Items can go backwards (e.g. sent back to Not Approved for a new proof), so the summary keeps
@@ -172,7 +179,7 @@ function summary({ from, to } = {}) {
     let targets = [...rows.values()].filter((r) => r.job === m.job && (m.item == null || r.item === m.item));
     if (!targets.length) {
       const info = jobInfo(m.job) || {};
-      const r = { job: m.job, item: m.item ?? '', description: '', title: info.title || '', customer: info.customer || '', csrNo: info.csrNo, stage: '', manualOnly: true };
+      const r = { job: m.job, item: m.item ?? '', description: '', title: info.title || '', customer: info.customer || '', csrNo: info.csrNo, dateDue: info.dateDue, stage: '', manualOnly: true };
       rows.set(m.job + '/' + (m.item ?? '*'), r);
       targets = [r];
     }
@@ -196,6 +203,7 @@ function summary({ from, to } = {}) {
       || Object.keys(MILESTONES).some((k) => r[k + 'Date'] && (!fromD || r[k + 'Date'] >= fromD) && (!toD || r[k + 'Date'] <= toD)));
   }
   for (const r of out) {
+    r.dateDue = dueDate(r.job, r.dateDue);
     r.workPrePressToPress = workHours(r.prePressAt, r.pressAt);
     r.workInPress = workHours(r.pressAt, r.leftPressAt);
     r.workDaysPrePressToPress = days(r, 'prePress', 'press');
@@ -213,8 +221,8 @@ const toCsv = (head, rows) => '﻿' + [head, ...rows].map((r) => r.map(csvCell).
 function eventsCsv(opts) {
   const KIND = { change: 'Stage change', new: 'New job', 'first-seen': 'First seen (already open when tracking started)', 'item-added': 'Item added', shipped: 'Ship date entered', closed: 'Left open list' };
   return toCsv(
-    ['Seen at', 'Changed after', 'Job', 'Item', 'Description', 'From stage', 'To stage', 'Press', 'Event', 'Customer', 'Title', 'CSR'],
-    list(opts).map((e) => [local(e.at), local(e.prevSeenAt), e.job, e.item ?? '', e.description, e.fromName, e.toName, e.press, KIND[e.kind] || e.kind, e.customer, e.title, e.csrName || csrName(e.csrNo)]),
+    ['Seen at', 'Changed after', 'Job', 'Item', 'Description', 'Due date', 'From stage', 'To stage', 'Press', 'Event', 'Customer', 'Title', 'CSR'],
+    list(opts).map((e) => [local(e.at), local(e.prevSeenAt), e.job, e.item ?? '', e.description, e.dateDue || '', e.fromName, e.toName, e.press, KIND[e.kind] || e.kind, e.customer, e.title, e.csrName || csrName(e.csrNo)]),
   );
 }
 
@@ -227,8 +235,8 @@ function days(r, a, b) {
 }
 function summaryCsv(opts) {
   return toCsv(
-    ['Job', 'Item', 'Description', 'Customer', 'Title', 'CSR', 'Press', 'First seen', 'First seen in stage', 'Approved (left Not Approved)', 'Entered Pre Press', 'Entered Press', 'Left Press', 'Left Press to', 'Ship date entered', 'Work hours Pre Press to Press', 'Work hours in Press stage', 'Clock hours Pre Press to Press', 'Clock hours in Press stage', 'Work days Pre Press to Press', 'Work days in Press stage', 'Current/last stage', 'Times sent back to Not Approved', 'Dates entered by hand (no time)'],
-    summary(opts).map((r) => [r.job, r.item, r.description, r.customer, r.title, r.csrName || csrName(r.csrNo), r.press, local(r.firstSeenAt), r.firstStage, when(r, 'approved'), when(r, 'prePress'), when(r, 'press'), when(r, 'leftPress'), r.leftPressTo || '', local(r.shippedAt), workHours(r.prePressAt, r.pressAt), workHours(r.pressAt, r.leftPressAt), hours(r.prePressAt, r.pressAt), hours(r.pressAt, r.leftPressAt), days(r, 'prePress', 'press'), days(r, 'press', 'leftPress'), r.stage, r.sentBack || 0, (r.manualDates || []).join(', ')]),
+    ['Job', 'Item', 'Description', 'Due date', 'Customer', 'Title', 'CSR', 'Press', 'First seen', 'First seen in stage', 'Approved (left Not Approved)', 'Entered Pre Press', 'Entered Press', 'Left Press', 'Left Press to', 'Ship date entered', 'Work hours Pre Press to Press', 'Work hours in Press stage', 'Clock hours Pre Press to Press', 'Clock hours in Press stage', 'Work days Pre Press to Press', 'Work days in Press stage', 'Current/last stage', 'Times sent back to Not Approved', 'Dates entered by hand (no time)'],
+    summary(opts).map((r) => [r.job, r.item, r.description, r.dateDue || '', r.customer, r.title, r.csrName || csrName(r.csrNo), r.press, local(r.firstSeenAt), r.firstStage, when(r, 'approved'), when(r, 'prePress'), when(r, 'press'), when(r, 'leftPress'), r.leftPressTo || '', local(r.shippedAt), workHours(r.prePressAt, r.pressAt), workHours(r.pressAt, r.leftPressAt), hours(r.prePressAt, r.pressAt), hours(r.pressAt, r.leftPressAt), days(r, 'prePress', 'press'), days(r, 'press', 'leftPress'), r.stage, r.sentBack || 0, (r.manualDates || []).join(', ')]),
   );
 }
 
