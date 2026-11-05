@@ -30,7 +30,7 @@ const MSD = (() => {
     return v || (prefix ? `${prefix} ${code}` : String(code));
   };
   // Ship method name; Printer's Plan marks retired methods with a leading '~', which is dropped here.
-  const shipVia = (j) => (j.shipVia == null ? '' : lab('shipVia', j.shipVia, 'Via').replace(/^~\s*/, ''));
+  const shipVia = (j) => (j.shipVia == null ? j.shipService || '' : lab('shipVia', j.shipVia, 'Via').replace(/^~\s*/, '')); // MIS jobs also send the method's name
   const jobStage = (j) => lab('jobStatus', j.status, 'Status');
   const mainLine = (j) => (j.items || []).find((i) => i.serNo === 0) || null;
   const itemStage = (j) => { const m = mainLine(j); return m ? lab('itemStatus', m.status, 'Item status') : '—'; };
@@ -44,11 +44,14 @@ const MSD = (() => {
   };
   const stage = (j) => { const c = stageCode(j); return c === null ? '' : lab('itemStatus', c, 'Status'); };
   const person = (group, code) => (code ? lab(group, code, '#') : '—');
-  // CSR for any job: Printer's Plan CSR number, or the name Atlas sends.
-  const csrOf = (j) => (j.source === 'atlas' ? j.csrName || '—' : person('csr', j.csrNo));
+  // CSR for any job: Printer's Plan CSR number, or the name Atlas (or the MIS, for a CSR with no Printer's Plan number) sends.
+  const csrOf = (j) => (j.source === 'atlas' || (j.source === 'mis' && !j.csrNo) ? j.csrName || '—' : person('csr', j.csrNo));
   const jobKey = (j) => j.key || String(j.jobNo);
   const isAtlas = (j) => j.source === 'atlas';
   const ATLAS_BADGE = '<span class="badge atlas" title="Atlas order">Atlas</span>';
+  const isMis = (j) => j.source === 'mis';
+  const MIS_BADGE = '<span class="badge mis" title="Entered in the Marathon MIS">MIS</span>';
+  const srcBadge = (j) => (isAtlas(j) ? ATLAS_BADGE : isMis(j) ? MIS_BADGE : '');
   // Where a stage sits in labels.stageOrder (for sorting jobs from both systems together).
   const stageRank = (j) => { const i = (L.stageOrder || []).indexOf(stage(j)); return i === -1 ? 99 : i; };
 
@@ -157,8 +160,8 @@ const MSD = (() => {
   }
   const fmtQty = (n) => (n ? Math.round(n).toLocaleString('en-US') : '—');
 
-  // Any job with "reprint" in its title gets flagged red everywhere.
-  const isReprint = (j) => /reprint/i.test(j.title || '');
+  // Any job with "reprint" in its title (or marked as a reprint in the MIS) gets flagged red everywhere.
+  const isReprint = (j) => !!j.reprint || /reprint/i.test(j.title || '');
   const REPRINT_BADGE = '<span class="badge reprint">Reprint</span> ';
 
   async function load() {
@@ -396,6 +399,11 @@ const MSD = (() => {
       cls = at.lastOkAt ? 'warn' : 'err';
       text = at.lastOkAt ? `Atlas offline · showing ${asOf} data` : 'Can’t reach Atlas';
     }
+    else if (scan.mis && scan.mis.enabled && scan.mis.stale) {
+      const ms = scan.mis, asOf = ms.lastOkAt ? new Date(ms.lastOkAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : '';
+      cls = ms.lastOkAt ? 'warn' : 'err';
+      text = ms.lastOkAt ? `MIS offline · showing ${asOf} data` : 'Can’t reach the MIS';
+    }
     else if (bf && !bf.done) { cls = 'warn'; text = `Initial scan ${Math.round(bf.progress * 100)}%`; }
     else if (!scan.lastCycleAt) { cls = 'warn'; text = 'Starting…'; }
     const when = scan.lastCycleAt ? new Date(scan.lastCycleAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : '';
@@ -415,5 +423,5 @@ const MSD = (() => {
     tipEl.style.left = x + 'px'; tipEl.style.top = y + 'px';
   }
 
-  return { csrOf, jobKey, isAtlas, ATLAS_BADGE, stageRank, nbHotShort, jobPresses, jobStageChip, nbHot, NB_HOT_ICON, shipVia, pressMinutes, pressBuckets, renderPress, fmtHrs, jobQty, fmtQty, renderGauges, gaugeSvg, jobsDueOn, dueTodayFraction, stageColor, stageChip, ignored, stage, stageCode, amount, prevWorkday, workdayOf, workdayBefore, needBy, needByText, cmpNeedBy, cmpDueThenNB, isReprint, REPRINT_BADGE, parse, addDays, diffDays, isWeekend, nextWorkday, weekStart, fmtShort, fmtDay, fmtLong, money, moneyK, esc, lab, jobStage, itemStage, mainLine, person, bucket, BUCKET_NAMES, ICONS, dueBadge, load, stageList, scanPill, tip };
+  return { csrOf, jobKey, isAtlas, ATLAS_BADGE, isMis, MIS_BADGE, srcBadge, stageRank, nbHotShort, jobPresses, jobStageChip, nbHot, NB_HOT_ICON, shipVia, pressMinutes, pressBuckets, renderPress, fmtHrs, jobQty, fmtQty, renderGauges, gaugeSvg, jobsDueOn, dueTodayFraction, stageColor, stageChip, ignored, stage, stageCode, amount, prevWorkday, workdayOf, workdayBefore, needBy, needByText, cmpNeedBy, cmpDueThenNB, isReprint, REPRINT_BADGE, parse, addDays, diffDays, isWeekend, nextWorkday, weekStart, fmtShort, fmtDay, fmtLong, money, moneyK, esc, lab, jobStage, itemStage, mainLine, person, bucket, BUCKET_NAMES, ICONS, dueBadge, load, stageList, scanPill, tip };
 })();

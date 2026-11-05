@@ -27,6 +27,12 @@ module.exports = {
 
   atlasRefreshSeconds: num(process.env.ATLAS_REFRESH_SECONDS, 150),
 
+  // Jobs entered in the Marathon MIS come from its read-only dashboard feed (MIS_URL/feed/dashboard,
+  // with MIS_FEED_KEY = the MIS's DASHBOARD_FEED_KEY). Unset or MIS_URL=off leaves them out.
+  misUrl: (process.env.MIS_URL === 'off' ? '' : process.env.MIS_URL || '').replace(/\/+$/, ''),
+  misFeedKey: process.env.MIS_FEED_KEY || '',
+  misRefreshSeconds: num(process.env.MIS_REFRESH_SECONDS, 60),
+
   // Shop hours, for "work hours" in the stage history (Mon–Fri 8am–4pm by default, Pacific).
   workStartHour: num(process.env.WORK_START_HOUR, 8),
   workEndHour: num(process.env.WORK_END_HOUR, 16),

@@ -16,7 +16,7 @@
     const rp = M.isReprint(j);
     const hot = M.nbHot(j, today);
     return `<div class="tv-job${rp ? ' reprint' : ''}${hot ? ' nb-hot' : ''}">
-      <div class="no">${j.jobNo}${M.isAtlas(j) ? '<span class="src">Atlas</span>' : ''}</div>
+      <div class="no">${j.jobNo}${M.isAtlas(j) ? '<span class="src">Atlas</span>' : M.isMis(j) ? '<span class="src mis">MIS</span>' : ''}</div>
       <div class="t">${rp ? M.REPRINT_BADGE : ''}${M.esc(j.title || '(no title)')}</div>
       <div class="m">
         ${hot ? `<span class="nb hot">${M.NB_HOT_ICON}<span class="full">${hot}</span><span class="short">${M.nbHotShort(hot)}</span></span>` : M.needBy(j) ? `<span class="nb">NB ${M.fmtShort(M.needBy(j))}</span>` : `<span class="nb none">${M.esc(M.needByText(j)) || 'No NB'}</span>`}

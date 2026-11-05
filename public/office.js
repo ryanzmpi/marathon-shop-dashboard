@@ -161,7 +161,7 @@
       (!f.stage || stageOf(j) === f.stage) &&
       (!f.csr || M.csrOf(j) === f.csr) &&
       (!f.via || M.shipVia(j) === f.via) &&
-      (!q || [j.jobNo, j.title, j.customer, j.po, j.buyer, j.shipTo, M.shipVia(j), M.isAtlas(j) ? 'atlas' : 'printers plan'].join(' ').toLowerCase().includes(q)));
+      (!q || [j.jobNo, j.title, j.customer, j.po, j.buyer, j.shipTo, M.shipVia(j), M.isAtlas(j) ? 'atlas' : M.isMis(j) ? 'mis' : 'printers plan'].join(' ').toLowerCase().includes(q)));
     const col = COLS.find((c) => c.key === sort.key);
     rows.sort((a, b) => {
       // Need-by column: no NB first, then by date, then due date.
@@ -178,7 +178,7 @@
       const rp = M.isReprint(j);
       const hot = M.nbHot(j, today);
       const tr = `<tr class="job${rp ? ' reprint' : ''}${hot ? ' nb-hot' : ''}" data-j="${M.esc(M.jobKey(j))}">
-        <td class="num">${j.jobNo}${M.isAtlas(j) ? M.ATLAS_BADGE : ''}</td>
+        <td class="num">${j.jobNo}${M.srcBadge(j)}</td>
         <td><span class="due ${b === 'late' || b === 'today' ? b : ''}">${M.fmtDay(j.dateDue)}</span> ${M.dueBadge(j, today)}</td>
         <td class="nb-cell">${hot ? `<span class="nb-flag">${M.NB_HOT_ICON}${hot}</span>` : M.needBy(j) ? `<b>${M.fmtDay(M.needBy(j))}</b>` : `<span class="muted">${M.esc(M.needByText(j)) || '—'}</span>`}</td>
         <td class="title"><div>${rp ? M.REPRINT_BADGE : ''}${M.esc(j.title)}</div><div class="cust">${M.esc(j.customer)}</div></td>
@@ -204,7 +204,7 @@
         ${j.po ? `<span>PO <b>${M.esc(j.po)}</b></span>` : ''}
         ${j.shipTo ? `<span>Ship to <b>${M.esc(j.shipTo)}</b>${j.shipAttention ? ' · ' + M.esc(j.shipAttention) : ''}</span>` : ''}
         ${j.fromJobNo ? `<span>From job <b>#${j.fromJobNo}</b></span>` : ''}
-        ${M.isAtlas(j) ? `<span>From <b>Atlas</b>${j.repName ? ' · sales rep ' + M.esc(j.repName) : ''}</span>` : `<span>Work order ${j.workOrderPrinted ? 'printed' : '<b>not printed</b>'}</span>`}
+        ${M.isAtlas(j) ? `<span>From <b>Atlas</b>${j.repName ? ' · sales rep ' + M.esc(j.repName) : ''}</span>` : M.isMis(j) ? `<span>From the <b>MIS</b>${j.misStage ? ' · ' + M.esc(j.misStage) : ''}${j.reprintReason ? ' · reprint: ' + M.esc(j.reprintReason) : ''}</span>` : `<span>Work order ${j.workOrderPrinted ? 'printed' : '<b>not printed</b>'}</span>`}
       </div>
       <div class="items">${lines}</div>
       ${j.workOrderNote ? `<div style="font-size:12px;color:var(--muted)">${M.isAtlas(j) ? 'Notes' : 'Work order note'}</div><pre>${M.esc(j.workOrderNote)}</pre>` : ''}
