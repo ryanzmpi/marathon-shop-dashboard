@@ -236,3 +236,6 @@ td.via { white-space: nowrap; color: var(--text-2); }
 /* Atlas (GoMake) orders */
 .badge.atlas { background: #2a2350; color: #c9bfff; border: 1px solid #5b4bc4; margin-left: 6px; font-size: 10px; padding: 0 6px; vertical-align: 2px; letter-spacing: .02em; }
 .badge.mis { background: #1f3a2e; color: #a7e8c4; border: 1px solid #3f8f66; margin-left: 6px; font-size: 10px; padding: 0 6px; vertical-align: 2px; letter-spacing: .02em; }
+
+/* A flexible need-by date (NB 11/09/26*) */
+.nb-star { font-weight: 800; margin-left: 1px; cursor: help; }

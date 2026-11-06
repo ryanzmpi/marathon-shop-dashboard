@@ -103,6 +103,10 @@ const MSD = (() => {
     j._nb = out;
     return out;
   }
+  // A * right after the NB date ("NB 11/09/26*") marks it flexible: the customer can live with it a little later.
+  const needByFlexible = (j) => /\bNB\s*[:\-]?\s*\d{1,2}[\/\-.]\d{1,2}(?:[\/\-.]\d{2,4})?[ \t]*\*/i.test(j.workOrderNote || '');
+  const FLEX = '<span class="nb-star" title="Flexible need-by date">*</span>';
+  const flexStar = (j) => (needByFlexible(j) ? FLEX : '');
   // What was typed after "NB" when it isn't a full date (e.g. "NB 11/?"), for display only.
   function needByText(j) {
     const m = /\bNB\b[ \t:]*([^\r\n|]{0,12})/i.exec(j.workOrderNote || '');
@@ -425,5 +429,5 @@ const MSD = (() => {
     tipEl.style.left = x + 'px'; tipEl.style.top = y + 'px';
   }
 
-  return { csrOf, jobKey, isAtlas, ATLAS_BADGE, isMis, MIS_BADGE, srcBadge, stageRank, nbHotShort, jobPresses, jobStageChip, nbHot, NB_HOT_ICON, shipVia, pressMinutes, pressBuckets, renderPress, fmtHrs, jobQty, fmtQty, renderGauges, gaugeSvg, jobsDueOn, dueTodayFraction, stageColor, stageChip, ignored, stage, stageCode, amount, prevWorkday, workdayOf, workdayBefore, needBy, needByText, cmpNeedBy, cmpDueThenNB, isReprint, REPRINT_BADGE, movedBadge, parse, addDays, diffDays, isWeekend, nextWorkday, weekStart, fmtShort, fmtDay, fmtLong, money, moneyK, esc, lab, jobStage, itemStage, mainLine, person, bucket, BUCKET_NAMES, ICONS, dueBadge, load, stageList, scanPill, tip };
+  return { csrOf, jobKey, isAtlas, ATLAS_BADGE, isMis, MIS_BADGE, srcBadge, stageRank, nbHotShort, jobPresses, jobStageChip, nbHot, NB_HOT_ICON, shipVia, pressMinutes, pressBuckets, renderPress, fmtHrs, jobQty, fmtQty, renderGauges, gaugeSvg, jobsDueOn, dueTodayFraction, stageColor, stageChip, ignored, stage, stageCode, amount, prevWorkday, workdayOf, workdayBefore, needBy, needByText, needByFlexible, flexStar, cmpNeedBy, cmpDueThenNB, isReprint, REPRINT_BADGE, movedBadge, parse, addDays, diffDays, isWeekend, nextWorkday, weekStart, fmtShort, fmtDay, fmtLong, money, moneyK, esc, lab, jobStage, itemStage, mainLine, person, bucket, BUCKET_NAMES, ICONS, dueBadge, load, stageList, scanPill, tip };
 })();
