@@ -36,6 +36,8 @@ function clean(j) {
     shipTo: str(j.shipTo), shipAttention: str(j.shipAttention), shipVia: j.shipVia == null ? null : num(j.shipVia), shipService: str(j.shipService, 80),
     csrNo: num(j.csrNo), csrName: str(j.csrName, 40), status: num(j.status), onHold: !!j.onHold, rush: !!j.rush,
     reprint: !!j.reprint, reprintReason: j.reprintReason ? str(j.reprintReason, 120) : null,
+    rescheduled: !!j.rescheduled, movedFrom: day(j.movedFrom), rescheduleReason: j.rescheduleReason ? str(j.rescheduleReason, 120) : null,
+    shipUpgradedFrom: j.shipUpgradedFrom ? str(j.shipUpgradedFrom, 80) : null,
     dateIn: day(j.dateIn), dateDue: day(j.dateDue), timeDue: '', dateShipped: day(j.dateShipped),
     subtotal: num(j.subtotal), total: num(j.total), shipping: num(j.shipping), workOrderNote: str(j.workOrderNote, 600), workOrderPrinted: false,
     misStage: str(j.stage, 60),

@@ -181,7 +181,7 @@
         <td class="num">${j.jobNo}${M.srcBadge(j)}</td>
         <td><span class="due ${b === 'late' || b === 'today' ? b : ''}">${M.fmtDay(j.dateDue)}</span> ${M.dueBadge(j, today)}</td>
         <td class="nb-cell">${hot ? `<span class="nb-flag">${M.NB_HOT_ICON}${hot}</span>` : M.needBy(j) ? `<b>${M.fmtDay(M.needBy(j))}</b>` : `<span class="muted">${M.esc(M.needByText(j)) || '—'}</span>`}</td>
-        <td class="title"><div>${rp ? M.REPRINT_BADGE : ''}${M.esc(j.title)}</div><div class="cust">${M.esc(j.customer)}</div></td>
+        <td class="title"><div>${rp ? M.REPRINT_BADGE : ''}${M.movedBadge(j)}${M.esc(j.title)}</div><div class="cust">${M.esc(j.customer)}</div></td>
         <td class="num right">${M.fmtQty(M.jobQty(j))}</td>
         <td class="via">${M.esc(M.shipVia(j)) || '<span class="muted">—</span>'}</td>
         <td>${M.jobStageChip(j)}</td>
@@ -204,7 +204,7 @@
         ${j.po ? `<span>PO <b>${M.esc(j.po)}</b></span>` : ''}
         ${j.shipTo ? `<span>Ship to <b>${M.esc(j.shipTo)}</b>${j.shipAttention ? ' · ' + M.esc(j.shipAttention) : ''}</span>` : ''}
         ${j.fromJobNo ? `<span>From job <b>#${j.fromJobNo}</b></span>` : ''}
-        ${M.isAtlas(j) ? `<span>From <b>Atlas</b>${j.repName ? ' · sales rep ' + M.esc(j.repName) : ''}</span>` : M.isMis(j) ? `<span>From the <b>MIS</b>${j.misStage ? ' · ' + M.esc(j.misStage) : ''}${j.reprintReason ? ' · reprint: ' + M.esc(j.reprintReason) : ''}</span>` : `<span>Work order ${j.workOrderPrinted ? 'printed' : '<b>not printed</b>'}</span>`}
+        ${M.isAtlas(j) ? `<span>From <b>Atlas</b>${j.repName ? ' · sales rep ' + M.esc(j.repName) : ''}</span>` : M.isMis(j) ? `<span>From the <b>MIS</b>${j.misStage ? ' · ' + M.esc(j.misStage) : ''}${j.reprintReason ? ' · reprint: ' + M.esc(j.reprintReason) : ''}${j.rescheduled ? ` · <b>moved${j.movedFrom ? ' from ' + M.fmtShort(j.movedFrom) : ''}</b>${j.rescheduleReason ? ': ' + M.esc(j.rescheduleReason) : ''}` : ''}${j.shipUpgradedFrom ? ` · shipping upgraded from ${M.esc(j.shipUpgradedFrom)}` : ''}</span>` : `<span>Work order ${j.workOrderPrinted ? 'printed' : '<b>not printed</b>'}</span>`}
       </div>
       <div class="items">${lines}</div>
       ${j.workOrderNote ? `<div style="font-size:12px;color:var(--muted)">${M.isAtlas(j) ? 'Notes' : 'Work order note'}</div><pre>${M.esc(j.workOrderNote)}</pre>` : ''}

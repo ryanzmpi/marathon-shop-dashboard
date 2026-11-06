@@ -163,6 +163,8 @@ const MSD = (() => {
   // Any job with "reprint" in its title (or marked as a reprint in the MIS) gets flagged red everywhere.
   const isReprint = (j) => !!j.reprint || /reprint/i.test(j.title || '');
   const REPRINT_BADGE = '<span class="badge reprint">Reprint</span> ';
+  // An MIS job whose ship date was moved (rescheduled in the MIS): an amber badge with where it moved from.
+  const movedBadge = (j) => (j.rescheduled ? `<span class="badge moved" title="Rescheduled${j.rescheduleReason ? ': ' + esc(j.rescheduleReason) : ''}${j.shipUpgradedFrom ? ' · shipping upgraded from ' + esc(j.shipUpgradedFrom) : ''}">Moved${j.movedFrom ? ' from ' + fmtShort(j.movedFrom) : ''}</span> ` : '');
 
   async function load() {
     const key = new URLSearchParams(location.search).get('key');
@@ -423,5 +425,5 @@ const MSD = (() => {
     tipEl.style.left = x + 'px'; tipEl.style.top = y + 'px';
   }
 
-  return { csrOf, jobKey, isAtlas, ATLAS_BADGE, isMis, MIS_BADGE, srcBadge, stageRank, nbHotShort, jobPresses, jobStageChip, nbHot, NB_HOT_ICON, shipVia, pressMinutes, pressBuckets, renderPress, fmtHrs, jobQty, fmtQty, renderGauges, gaugeSvg, jobsDueOn, dueTodayFraction, stageColor, stageChip, ignored, stage, stageCode, amount, prevWorkday, workdayOf, workdayBefore, needBy, needByText, cmpNeedBy, cmpDueThenNB, isReprint, REPRINT_BADGE, parse, addDays, diffDays, isWeekend, nextWorkday, weekStart, fmtShort, fmtDay, fmtLong, money, moneyK, esc, lab, jobStage, itemStage, mainLine, person, bucket, BUCKET_NAMES, ICONS, dueBadge, load, stageList, scanPill, tip };
+  return { csrOf, jobKey, isAtlas, ATLAS_BADGE, isMis, MIS_BADGE, srcBadge, stageRank, nbHotShort, jobPresses, jobStageChip, nbHot, NB_HOT_ICON, shipVia, pressMinutes, pressBuckets, renderPress, fmtHrs, jobQty, fmtQty, renderGauges, gaugeSvg, jobsDueOn, dueTodayFraction, stageColor, stageChip, ignored, stage, stageCode, amount, prevWorkday, workdayOf, workdayBefore, needBy, needByText, cmpNeedBy, cmpDueThenNB, isReprint, REPRINT_BADGE, movedBadge, parse, addDays, diffDays, isWeekend, nextWorkday, weekStart, fmtShort, fmtDay, fmtLong, money, moneyK, esc, lab, jobStage, itemStage, mainLine, person, bucket, BUCKET_NAMES, ICONS, dueBadge, load, stageList, scanPill, tip };
 })();
