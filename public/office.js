@@ -180,7 +180,7 @@
       const tr = `<tr class="job${rp ? ' reprint' : ''}${hot ? ' nb-hot' : ''}" data-j="${M.esc(M.jobKey(j))}">
         <td class="num">${j.jobNo}${M.srcBadge(j)}</td>
         <td><span class="due ${b === 'late' || b === 'today' ? b : ''}">${M.fmtDay(j.dateDue)}</span> ${M.dueBadge(j, today)}</td>
-        <td class="nb-cell">${hot ? `<span class="nb-flag">${M.NB_HOT_ICON}${hot}${M.flexStar(j)}</span>` : M.needBy(j) ? `<b>${M.fmtDay(M.needBy(j))}</b>${M.flexStar(j)}` : `<span class="muted">${M.esc(M.needByText(j)) || '—'}</span>`}</td>
+        <td class="nb-cell">${hot ? `<span class="nb-flag">${M.NB_HOT_ICON}${hot}</span>${M.flexTag(j)}` : M.needBy(j) ? `<b>${M.fmtDay(M.needBy(j))}</b>${M.flexTag(j)}` : `<span class="muted">${M.esc(M.needByText(j)) || '—'}</span>`}</td>
         <td class="title"><div>${rp ? M.REPRINT_BADGE : ''}${M.movedBadge(j)}${M.esc(j.title)}</div><div class="cust">${M.esc(j.customer)}</div></td>
         <td class="num right">${M.fmtQty(M.jobQty(j))}</td>
         <td class="via">${M.esc(M.shipVia(j)) || '<span class="muted">—</span>'}</td>

@@ -19,7 +19,7 @@
       <div class="no">${j.jobNo}${M.isAtlas(j) ? '<span class="src">Atlas</span>' : M.isMis(j) ? '<span class="src mis">MIS</span>' : ''}</div>
       <div class="t">${rp ? M.REPRINT_BADGE : ''}${M.movedBadge(j)}${M.esc(j.title || '(no title)')}</div>
       <div class="m">
-        ${hot ? `<span class="nb hot">${M.NB_HOT_ICON}<span class="full">${hot}</span><span class="short">${M.nbHotShort(hot)}</span>${M.flexStar(j)}</span>` : M.needBy(j) ? `<span class="nb">NB ${M.fmtShort(M.needBy(j))}${M.flexStar(j)}</span>` : `<span class="nb none">${M.esc(M.needByText(j)) || 'No NB'}</span>`}
+        ${hot ? `<span class="nb hot">${M.NB_HOT_ICON}<span class="full">${hot}</span><span class="short">${M.nbHotShort(hot)}</span></span>${M.flexTag(j)}` : M.needBy(j) ? `<span class="nb">NB ${M.fmtShort(M.needBy(j))}</span>${M.flexTag(j)}` : `<span class="nb none">${M.esc(M.needByText(j)) || 'No NB'}</span>`}
         ${lateBy ? `<span class="lateby">${lateBy}d late</span>` : ''}
         ${M.jobQty(j) ? `<span class="qty">${M.fmtQty(M.jobQty(j))}<small> pcs</small></span>` : ''}
         <span class="cust">${M.esc(j.customer || '')}</span>

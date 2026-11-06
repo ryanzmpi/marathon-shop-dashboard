@@ -68,6 +68,7 @@ const MSD = (() => {
   const BUCKET_NAMES = { late: 'Late', today: 'Due today', next: 'Next workday', week: 'Next 7 days', later: 'Later', nodate: 'No due date' };
 
   const ICONS = {
+    flex: '<svg class="icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M1.5 8h13M4.5 5 1.5 8l3 3M11.5 5l3 3-3 3" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>',
     late: '<svg class="icon" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M8 1.5 15 14H1L8 1.5Zm-.75 4.5v4h1.5V6h-1.5Zm0 5v1.5h1.5V11h-1.5Z"/></svg>',
     today: '<svg class="icon" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.25" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8 4.5V8l2.5 1.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>',
   };
@@ -105,8 +106,8 @@ const MSD = (() => {
   }
   // A * right after the NB date ("NB 11/09/26*") marks it flexible: the customer can live with it a little later.
   const needByFlexible = (j) => /\bNB\s*[:\-]?\s*\d{1,2}[\/\-.]\d{1,2}(?:[\/\-.]\d{2,4})?[ \t]*\*/i.test(j.workOrderNote || '');
-  const FLEX = '<span class="nb-star" title="Flexible need-by date">*</span>';
-  const flexStar = (j) => (needByFlexible(j) ? FLEX : '');
+  // Shown as a small "Flex" tag next to the date, like the Today tag.
+  const flexTag = (j) => (needByFlexible(j) ? ` <span class="badge flex" title="Flexible need-by date: the customer can live with it a little later">${ICONS.flex}Flex</span>` : '');
   // What was typed after "NB" when it isn't a full date (e.g. "NB 11/?"), for display only.
   function needByText(j) {
     const m = /\bNB\b[ \t:]*([^\r\n|]{0,12})/i.exec(j.workOrderNote || '');
@@ -429,5 +430,5 @@ const MSD = (() => {
     tipEl.style.left = x + 'px'; tipEl.style.top = y + 'px';
   }
 
-  return { csrOf, jobKey, isAtlas, ATLAS_BADGE, isMis, MIS_BADGE, srcBadge, stageRank, nbHotShort, jobPresses, jobStageChip, nbHot, NB_HOT_ICON, shipVia, pressMinutes, pressBuckets, renderPress, fmtHrs, jobQty, fmtQty, renderGauges, gaugeSvg, jobsDueOn, dueTodayFraction, stageColor, stageChip, ignored, stage, stageCode, amount, prevWorkday, workdayOf, workdayBefore, needBy, needByText, needByFlexible, flexStar, cmpNeedBy, cmpDueThenNB, isReprint, REPRINT_BADGE, movedBadge, parse, addDays, diffDays, isWeekend, nextWorkday, weekStart, fmtShort, fmtDay, fmtLong, money, moneyK, esc, lab, jobStage, itemStage, mainLine, person, bucket, BUCKET_NAMES, ICONS, dueBadge, load, stageList, scanPill, tip };
+  return { csrOf, jobKey, isAtlas, ATLAS_BADGE, isMis, MIS_BADGE, srcBadge, stageRank, nbHotShort, jobPresses, jobStageChip, nbHot, NB_HOT_ICON, shipVia, pressMinutes, pressBuckets, renderPress, fmtHrs, jobQty, fmtQty, renderGauges, gaugeSvg, jobsDueOn, dueTodayFraction, stageColor, stageChip, ignored, stage, stageCode, amount, prevWorkday, workdayOf, workdayBefore, needBy, needByText, needByFlexible, flexTag, cmpNeedBy, cmpDueThenNB, isReprint, REPRINT_BADGE, movedBadge, parse, addDays, diffDays, isWeekend, nextWorkday, weekStart, fmtShort, fmtDay, fmtLong, money, moneyK, esc, lab, jobStage, itemStage, mainLine, person, bucket, BUCKET_NAMES, ICONS, dueBadge, load, stageList, scanPill, tip };
 })();
